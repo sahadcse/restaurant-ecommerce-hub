@@ -1,22 +1,24 @@
-import express, { Request, Response } from 'express';
-import dotenv from 'dotenv';
-import pool from './db';
+import express, { Request, Response } from "express";
+import dotenv from "dotenv";
+import pool from "./db";
+import authRouter from "./routes/auth";
 
 dotenv.config();
 const app = express();
 const port: number = Number(process.env.PORT) || 3001;
 
 app.use(express.json());
+app.use("/auth", authRouter);
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Restaurant E-Commerce Hub Backend (TypeScript)');
+app.get("/", (req: Request, res: Response) => {
+  res.send("Restaurant E-Commerce Hub Backend (TypeScript)");
 });
 
-// Test DB connection
-app.get('/db-test', async (req: Request, res: Response) => {
+// Fixed async route handler
+app.get("/db-test", async (req: Request, res: Response): Promise<void> => {
   try {
-    const result = await pool.query('SELECT NOW()');
-    res.json({ message: 'Database connected', time: result.rows[0].now });
+    const result = await pool.query("SELECT NOW()");
+    res.json({ message: "Database connected", time: result.rows[0].now });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }
@@ -25,3 +27,4 @@ app.get('/db-test', async (req: Request, res: Response) => {
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+export default app;
