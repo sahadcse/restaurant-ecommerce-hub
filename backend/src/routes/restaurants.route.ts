@@ -5,7 +5,7 @@ import {
   getRestaurantById,
   updateRestaurant,
   deleteRestaurant,
-} from "../models/restaurant";
+} from "../models/restaurant.model";
 import { authenticate, restrictTo } from "../middleware/auth";
 
 const router = express.Router();
