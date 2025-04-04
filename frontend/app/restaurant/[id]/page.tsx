@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "../../../lib/cartContext";
 import CartModal from "../../../components/CartModal";
+import { useAuth } from '../../../lib/authContext';
 
 export default function RestaurantMenu() {
   const { id } = useParams();
@@ -14,6 +15,7 @@ export default function RestaurantMenu() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
+  const { token } = useAuth();
 
   useEffect(() => {
     if (isNaN(restaurantId)) return;
@@ -35,7 +37,20 @@ export default function RestaurantMenu() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-black text-white p-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Restaurant Hub</h1>
+        <Link href="/" className="text-2xl font-bold">
+          Restaurant Hub
+        </Link>
+        {
+          token ? (
+            <Link href="#" className="text-white hover:underline">
+              Logout(coming soon)
+            </Link>
+          ) : (
+            <Link href="/login" className="text-white hover:underline">
+              Login
+            </Link>
+          )
+        }
         <Link href="/" className="text-primary hover:underline">
           Back to Home
         </Link>

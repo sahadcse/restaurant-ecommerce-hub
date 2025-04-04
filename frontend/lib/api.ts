@@ -35,4 +35,29 @@ export const getMenuItems = async (restaurantId: number): Promise<MenuItem[]> =>
   return response.data;
 };
 
+export interface Order {
+  id: number;
+  user_id: number;
+  restaurant_id: number;
+  status: 'pending' | 'preparing' | 'shipped' | 'delivered';
+  total: number;
+  created_at: string;
+}
+
+
+export const createOrder = async (
+  restaurantId: number,
+  items: { menu_item_id: number; quantity: number }[],
+  total: number,
+  token: string
+): Promise<Order> => {
+  const response = await api.post<Order>(
+    '/orders',
+    { restaurant_id: restaurantId, items, total },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  console.log('Order response:', response);
+  return response.data;
+};
+
 export default api;
