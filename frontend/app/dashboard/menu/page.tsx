@@ -1,61 +1,63 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../../lib/authContext';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from "react";
+import { useAuth } from "../../../lib/authContext";
+import { useRouter } from "next/navigation";
 import {
   getMenuItems,
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
   MenuItem,
-} from '../../../lib/api';
-import Image from 'next/image';
+  getRestaurantByOwner,
+} from "../../../lib/api";
+import Image from "next/image";
 
 export default function MenuManagement() {
   const { token } = useAuth();
   const router = useRouter();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [restaurantId, setRestaurantId] = useState(3); // Hardcoded for now, fetch later
-  const [newItem, setNewItem] = useState<Omit<MenuItem, 'id' | 'restaurant_id'>>({
-    name: '',
+  const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  const [newItem, setNewItem] = useState<
+    Omit<MenuItem, "id" | "restaurant_id">
+  >({
+    name: "",
     price: 0,
-    description: '',
-    image_url: '',
+    description: "",
+    image_url: "",
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchMenuItems = useCallback(async () => {
-    try {
-      const data = await getMenuItems(restaurantId);
-      setMenuItems(data);
-    } catch (err) {
-      console.error('Error fetching menu items:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [restaurantId]);
-
   useEffect(() => {
     if (!token) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
-    fetchMenuItems();
-  }, [token, router, fetchMenuItems]);
-
-
+    const fetchRestaurantAndMenu = async () => {
+      try {
+        const restaurant = await getRestaurantByOwner(token);
+        setRestaurantId(restaurant.id);
+        const data = await getMenuItems(restaurant.id);
+        setMenuItems(data);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRestaurantAndMenu();
+  }, [token, router]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
+    if (!token || !restaurantId) return;
     try {
       const created = await createMenuItem(restaurantId, newItem, token);
       setMenuItems([...menuItems, created]);
-      setNewItem({ name: '', price: 0, description: '', image_url: '' });
+      setNewItem({ name: "", price: 0, description: "", image_url: "" });
     } catch (err) {
-      console.error('Error creating menu item:', err);
+      console.error("Error creating menu item:", err);
     }
   };
 
@@ -64,16 +66,20 @@ export default function MenuManagement() {
     try {
       const itemToUpdate = menuItems.find((item) => item.id === id);
       if (!itemToUpdate) return;
-      const updated = await updateMenuItem(id, {
-        name: itemToUpdate.name,
-        price: itemToUpdate.price,
-        description: itemToUpdate.description,
-        image_url: itemToUpdate.image_url,
-      }, token);
+      const updated = await updateMenuItem(
+        id,
+        {
+          name: itemToUpdate.name,
+          price: itemToUpdate.price,
+          description: itemToUpdate.description,
+          image_url: itemToUpdate.image_url,
+        },
+        token
+      );
       setMenuItems(menuItems.map((item) => (item.id === id ? updated : item)));
       setEditingId(null);
     } catch (err) {
-      console.error('Error updating menu item:', err);
+      console.error("Error updating menu item:", err);
     }
   };
 
@@ -83,18 +89,21 @@ export default function MenuManagement() {
       await deleteMenuItem(id, token);
       setMenuItems(menuItems.filter((item) => item.id !== id));
     } catch (err) {
-      console.error('Error deleting menu item:', err);
+      console.error("Error deleting menu item:", err);
     }
   };
 
-  if (!token) return null; // Redirect handled by useEffect
+  if (!token || !restaurantId) return null;
 
   return (
     <div>
-      <h2 className="text-3xl font-semibold mb-6 text-black">Menu Management</h2>
-
-      {/* Add New Item Form */}
-      <form onSubmit={handleCreate} className="mb-8 bg-gray-100 p-4 rounded-lg space-y-4">
+      <h2 className="text-3xl font-semibold mb-6 text-black">
+        Menu Management
+      </h2>
+      <form
+        onSubmit={handleCreate}
+        className="mb-8 bg-gray-100 p-4 rounded-lg space-y-4"
+      >
         <div>
           <label className="block text-black mb-1">Name</label>
           <input
@@ -111,7 +120,9 @@ export default function MenuManagement() {
             type="number"
             step="0.01"
             value={newItem.price}
-            onChange={(e) => setNewItem({ ...newItem, price: parseFloat(e.target.value) })}
+            onChange={(e) =>
+              setNewItem({ ...newItem, price: parseFloat(e.target.value) })
+            }
             className="w-full p-2 border rounded text-black"
             required
           />
@@ -120,7 +131,9 @@ export default function MenuManagement() {
           <label className="block text-black mb-1">Description</label>
           <textarea
             value={newItem.description}
-            onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+            onChange={(e) =>
+              setNewItem({ ...newItem, description: e.target.value })
+            }
             className="w-full p-2 border rounded text-black"
           />
         </div>
@@ -129,7 +142,9 @@ export default function MenuManagement() {
           <input
             type="url"
             value={newItem.image_url}
-            onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+            onChange={(e) =>
+              setNewItem({ ...newItem, image_url: e.target.value })
+            }
             className="w-full p-2 border rounded text-black"
           />
         </div>
@@ -140,8 +155,6 @@ export default function MenuManagement() {
           Add Item
         </button>
       </form>
-
-      {/* Menu Items List */}
       {loading ? (
         <p className="text-gray-500">Loading...</p>
       ) : menuItems.length === 0 ? (
@@ -175,7 +188,9 @@ export default function MenuManagement() {
                       onChange={(e) =>
                         setMenuItems(
                           menuItems.map((i) =>
-                            i.id === item.id ? { ...i, name: e.target.value } : i
+                            i.id === item.id
+                              ? { ...i, name: e.target.value }
+                              : i
                           )
                         )
                       }
@@ -188,7 +203,9 @@ export default function MenuManagement() {
                       onChange={(e) =>
                         setMenuItems(
                           menuItems.map((i) =>
-                            i.id === item.id ? { ...i, price: parseFloat(e.target.value) } : i
+                            i.id === item.id
+                              ? { ...i, price: parseFloat(e.target.value) }
+                              : i
                           )
                         )
                       }
@@ -199,7 +216,9 @@ export default function MenuManagement() {
                       onChange={(e) =>
                         setMenuItems(
                           menuItems.map((i) =>
-                            i.id === item.id ? { ...i, description: e.target.value } : i
+                            i.id === item.id
+                              ? { ...i, description: e.target.value }
+                              : i
                           )
                         )
                       }
@@ -211,7 +230,9 @@ export default function MenuManagement() {
                       onChange={(e) =>
                         setMenuItems(
                           menuItems.map((i) =>
-                            i.id === item.id ? { ...i, image_url: e.target.value } : i
+                            i.id === item.id
+                              ? { ...i, image_url: e.target.value }
+                              : i
                           )
                         )
                       }
@@ -232,9 +253,15 @@ export default function MenuManagement() {
                   </>
                 ) : (
                   <>
-                    <h3 className="text-lg font-medium text-black">{item.name}</h3>
-                    <p className="text-gray-600">${Number(item.price).toFixed(2)}</p>
-                    <p className="text-gray-600">{item.description || 'No description'}</p>
+                    <h3 className="text-lg font-medium text-black">
+                      {item.name}
+                    </h3>
+                    <p className="text-gray-600">
+                      ${Number(item.price).toFixed(2)}
+                    </p>
+                    <p className="text-gray-600">
+                      {item.description || "No description"}
+                    </p>
                   </>
                 )}
               </div>

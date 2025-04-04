@@ -90,4 +90,35 @@ export const deleteMenuItem = async (id: number, token: string): Promise<void> =
   await api.delete(`/menu/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 };
 
+export const getRestaurantOrders = async (
+  restaurantId: number,
+  token: string
+): Promise<Order[]> => {
+  const response = await api.get<Order[]>(`/orders/restaurant/${restaurantId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+export const updateOrderStatus = async (
+  orderId: number,
+  status: 'pending' | 'preparing' | 'shipped' | 'delivered',
+  token: string
+): Promise<Order> => {
+  const response = await api.put<Order>(
+    `/orders/${orderId}/status`,
+    { status },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
+
+export const getRestaurantByOwner = async (token: string): Promise<Restaurant> => {
+  const response = await api.get<Restaurant[]>('/restaurants', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  // Assume first restaurant belongs to the owner (simplified for now)
+  return response.data.find((r) => !r.approved) || response.data[0];
+};
+
 export default api;
