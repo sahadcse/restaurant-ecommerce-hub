@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getRestaurants, Restaurant } from '../lib/api';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -41,7 +42,7 @@ export default function Home() {
             {restaurants.map((restaurant) => (
               <div
                 key={restaurant.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
+                className="border border-gray-400 rounded-lg p-4 hover:shadow-lg transition-shadow"
               >
                 {restaurant.logo_url ? (
                   <Image
@@ -58,9 +59,11 @@ export default function Home() {
                 )}
                 <h3 className="text-xl font-medium text-black">{restaurant.name}</h3>
                 <p className="text-gray-600">{restaurant.location}</p>
-                <button className="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors">
-                  View Menu
-                </button>
+                <Link href={`/restaurant/${restaurant.id}`}>
+                  <button className="mt-2 bg-black text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors">
+                    View Menu
+                  </button>
+                </Link>
               </div>
             ))}
           </div>
