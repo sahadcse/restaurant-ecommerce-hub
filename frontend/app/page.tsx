@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { getRestaurants, Restaurant } from '../lib/api';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { getRestaurants, Restaurant } from "../lib/api";
+import Image from "next/image";
+import Link from "next/link";
+import CartModal from "../components/CartModal";
 
 export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -15,7 +16,7 @@ export default function Home() {
         const data = await getRestaurants();
         setRestaurants(data);
       } catch (err) {
-        console.error('Error fetching restaurants:', err);
+        console.error("Error fetching restaurants:", err);
       } finally {
         setLoading(false);
       }
@@ -32,7 +33,9 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto p-6">
-        <h2 className="text-3xl font-semibold mb-6 text-black">Explore Restaurants</h2>
+        <h2 className="text-3xl font-semibold mb-6 text-black">
+          Explore Restaurants
+        </h2>
         {loading ? (
           <p className="text-gray-500">Loading...</p>
         ) : restaurants.length === 0 ? (
@@ -57,7 +60,9 @@ export default function Home() {
                     <span className="text-gray-500">No Image</span>
                   </div>
                 )}
-                <h3 className="text-xl font-medium text-black">{restaurant.name}</h3>
+                <h3 className="text-xl font-medium text-black">
+                  {restaurant.name}
+                </h3>
                 <p className="text-gray-600">{restaurant.location}</p>
                 <Link href={`/restaurant/${restaurant.id}`}>
                   <button className="mt-2 bg-black text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors">
@@ -74,6 +79,7 @@ export default function Home() {
       <footer className="bg-black text-white p-4 text-center">
         <p>&copy; 2025 Restaurant Hub. All rights reserved.</p>
       </footer>
+      <CartModal />
     </div>
   );
 }

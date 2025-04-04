@@ -1,4 +1,5 @@
 import "./globals.css";
+import { CartProvider } from "../lib/cartContext";
 
 export const metadata = {
   title: "Restaurant E-Commerce Hub",
@@ -12,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <CartProvider>{children}</CartProvider>
+      </body>
     </html>
   );
 }
