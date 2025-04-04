@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "../../../lib/cartContext";
 import CartModal from "../../../components/CartModal";
-import { useAuth } from '../../../lib/authContext';
+import { useAuth } from "../../../lib/authContext";
 
 export default function RestaurantMenu() {
   const { id } = useParams();
@@ -40,17 +40,20 @@ export default function RestaurantMenu() {
         <Link href="/" className="text-2xl font-bold">
           Restaurant Hub
         </Link>
-        {
-          token ? (
+        {token ? (
+          <>
             <Link href="#" className="text-white hover:underline">
               Logout(coming soon)
             </Link>
-          ) : (
-            <Link href="/login" className="text-white hover:underline">
-              Login
+            <Link href="/dashboard/menu" className="text-white hover:underline">
+              Dashboard
             </Link>
-          )
-        }
+          </>
+        ) : (
+          <Link href="/login" className="text-white hover:underline">
+            Login
+          </Link>
+        )}
         <Link href="/" className="text-primary hover:underline">
           Back to Home
         </Link>

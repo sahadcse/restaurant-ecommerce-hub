@@ -60,4 +60,34 @@ export const createOrder = async (
   return response.data;
 };
 
+export const createMenuItem = async (
+  restaurantId: number,
+  item: Omit<MenuItem, 'id' | 'restaurant_id'>,
+  token: string
+): Promise<MenuItem> => {
+  const response = await api.post<MenuItem>(
+    '/menu',
+    { restaurant_id: restaurantId, ...item },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
+
+export const updateMenuItem = async (
+  id: number,
+  item: Omit<MenuItem, 'id' | 'restaurant_id'>,
+  token: string
+): Promise<MenuItem> => {
+  const response = await api.put<MenuItem>(
+    `/menu/${id}`,
+    item,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
+
+export const deleteMenuItem = async (id: number, token: string): Promise<void> => {
+  await api.delete(`/menu/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+};
+
 export default api;
