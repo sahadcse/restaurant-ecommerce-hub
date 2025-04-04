@@ -1,16 +1,19 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { getMenuItems, MenuItem } from '../../../lib/api';
-import Link from 'next/link';
-import Image from 'next/image';
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { getMenuItems, MenuItem } from "../../../lib/api";
+import Link from "next/link";
+import Image from "next/image";
+import { useCart } from "../../../lib/cartContext";
+import CartModal from "../../../components/CartModal";
 
 export default function RestaurantMenu() {
   const { id } = useParams();
-  const restaurantId = typeof id === 'string' ? parseInt(id) : NaN;
+  const restaurantId = typeof id === "string" ? parseInt(id) : NaN;
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
 
   useEffect(() => {
     if (isNaN(restaurantId)) return;
@@ -20,7 +23,7 @@ export default function RestaurantMenu() {
         const data = await getMenuItems(restaurantId);
         setMenuItems(data);
       } catch (err) {
-        console.error('Error fetching menu items:', err);
+        console.error("Error fetching menu items:", err);
       } finally {
         setLoading(false);
       }
@@ -68,9 +71,16 @@ export default function RestaurantMenu() {
                   </div>
                 )}
                 <h3 className="text-xl font-medium text-black">{item.name}</h3>
-                <p className="text-gray-600">{item.description || 'No description'}</p>
-                <p className="text-primary font-semibold mt-2">${item.price.toFixed(2)}</p>
-                <button className="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors">
+                <p className="text-gray-600">
+                  {item.description || "No description"}
+                </p>
+                <p className="text-primary font-semibold mt-2">
+                  ${Number(item.price).toFixed(2)}
+                </p>
+                <button
+                  onClick={() => addToCart(item)}
+                  className="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors"
+                >
                   Add to Cart
                 </button>
               </div>
@@ -83,6 +93,7 @@ export default function RestaurantMenu() {
       <footer className="bg-black text-white p-4 text-center">
         <p>© 2025 Restaurant Hub. All rights reserved.</p>
       </footer>
+      <CartModal />
     </div>
   );
 }
