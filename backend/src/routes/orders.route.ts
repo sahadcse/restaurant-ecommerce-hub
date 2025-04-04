@@ -27,7 +27,7 @@ router.post('/', authenticate, restrictTo('customer'), async (req: Request, res:
       return;
     }
 
-    if (restaurant.approved) {
+    if (!restaurant.approved) {
       res.status(403).json({ error: 'Restaurant is not approved' });
       return;
     }
