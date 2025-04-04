@@ -1,8 +1,9 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import pool from './db';
-import authRouter from './routes/auth';
-import restaurantRouter from './routes/restaurants';
+import authRouter from './routes/auth.route';
+import restaurantRouter from './routes/restaurants.route';
+import menuRouter from './routes/menu.route';
 
 dotenv.config();
 const app = express();
@@ -11,6 +12,7 @@ const port: number = Number(process.env.PORT) || 3001;
 app.use(express.json());
 app.use('/auth', authRouter);
 app.use('/restaurants', restaurantRouter);
+app.use('/menu', menuRouter);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Restaurant E-Commerce Hub Backend (TypeScript)');
