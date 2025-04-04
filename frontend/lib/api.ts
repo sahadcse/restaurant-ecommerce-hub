@@ -16,8 +16,22 @@ export interface Restaurant {
   approved: boolean;
 }
 
+export interface MenuItem {
+  id: number;
+  restaurant_id: number;
+  name: string;
+  price: number;
+  description?: string;
+  image_url?: string;
+}
+
 export const getRestaurants = async (): Promise<Restaurant[]> => {
-  const response = await api.get<Restaurant[]>("/restaurants");
+  const response = await api.get<Restaurant[]>('/restaurants');
+  return response.data;
+};
+
+export const getMenuItems = async (restaurantId: number): Promise<MenuItem[]> => {
+  const response = await api.get<MenuItem[]>(`/menu/${restaurantId}`);
   return response.data;
 };
 

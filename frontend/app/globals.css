@@ -1,9 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/preflight";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 @layer base {
   body {
@@ -14,5 +14,9 @@
 @layer components {
   .btn {
     @apply px-4 py-2 bg-blue-500 text-white rounded;
+  }
+  
+  .bg-primary {
+    @apply bg-blue-500; /* You can change this to your preferred primary color */
   }
 }
