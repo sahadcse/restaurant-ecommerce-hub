@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://192.168.1.103:3001", // Backend URL
+  baseURL: "http://192.168.1.102:3001", // Backend URL
   headers: {
     "Content-Type": "application/json",
   },
@@ -119,6 +119,42 @@ export const getRestaurantByOwner = async (token: string): Promise<Restaurant> =
   });
   // Assume first restaurant belongs to the owner (simplified for now)
   return response.data.find((r) => !r.approved) || response.data[0];
+};
+
+export const getAllRestaurantsForAdmin = async (token: string): Promise<Restaurant[]> => {
+  const response = await api.get<Restaurant[]>('/restaurants/restaurantsAdmin', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data; // Admin sees all restaurants
+};
+
+export const updateRestaurant = async (
+  id: number,
+  data: Partial<Restaurant>,
+  token: string
+): Promise<Restaurant> => {
+  const response = await api.put<Restaurant>(`/restaurants/${id}`, data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
+// Update restaurant details (admin only) "/:id/approve" const { approved } = req.body;
+export const updateStatusRestaurant = async (
+  id: number,
+  data: { approved: boolean },
+  token: string
+): Promise<Restaurant> => {
+  const response = await api.put<Restaurant>(`/restaurants/${id}/approve`, data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+}
+
+
+
+export const deleteRestaurant = async (id: number, token: string): Promise<void> => {
+  await api.delete(`/restaurants/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 };
 
 export default api;

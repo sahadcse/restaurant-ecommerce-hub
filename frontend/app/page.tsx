@@ -25,17 +25,20 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-black text-white p-4">
+<div className="min-h-screen bg-white">
+      <header className="bg-black text-white p-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Restaurant Hub</h1>
+        <div className="flex gap-4">
+          <Link href="/login" className="text-primary hover:underline">
+            Login
+          </Link>
+          <Link href="/admin/restaurants" className="text-primary hover:underline">
+            Admin
+          </Link>
+        </div>
       </header>
-
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto p-6">
-        <h2 className="text-3xl font-semibold mb-6 text-black">
-          Explore Restaurants
-        </h2>
+        <h2 className="text-3xl font-semibold mb-6 text-black">Explore Restaurants</h2>
         {loading ? (
           <p className="text-gray-500">Loading...</p>
         ) : restaurants.length === 0 ? (
@@ -45,13 +48,13 @@ export default function Home() {
             {restaurants.map((restaurant) => (
               <div
                 key={restaurant.id}
-                className="border border-gray-400 rounded-lg p-4 hover:shadow-lg transition-shadow"
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
               >
                 {restaurant.logo_url ? (
                   <Image
                     src={restaurant.logo_url}
                     alt={restaurant.name}
-                    width={400}
+                    width={300}
                     height={128}
                     className="w-full h-32 object-cover rounded-md mb-4"
                   />
@@ -60,12 +63,10 @@ export default function Home() {
                     <span className="text-gray-500">No Image</span>
                   </div>
                 )}
-                <h3 className="text-xl font-medium text-black">
-                  {restaurant.name}
-                </h3>
+                <h3 className="text-xl font-medium text-black">{restaurant.name}</h3>
                 <p className="text-gray-600">{restaurant.location}</p>
                 <Link href={`/restaurant/${restaurant.id}`}>
-                  <button className="mt-2 bg-black text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors">
+                  <button className="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors">
                     View Menu
                   </button>
                 </Link>
@@ -74,10 +75,8 @@ export default function Home() {
           </div>
         )}
       </main>
-
-      {/* Footer */}
       <footer className="bg-black text-white p-4 text-center">
-        <p>&copy; 2025 Restaurant Hub. All rights reserved.</p>
+        <p>© 2025 Restaurant Hub. All rights reserved.</p>
       </footer>
       <CartModal />
     </div>
