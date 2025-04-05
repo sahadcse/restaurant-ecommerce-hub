@@ -20,7 +20,7 @@ export default function Login() {
       }
 
       const response = await axios.post<LoginResponse>(
-        "http://192.168.1.103:3001/auth/login",
+        "http://192.168.1.102:3001/auth/login",
         {
           email,
           password,

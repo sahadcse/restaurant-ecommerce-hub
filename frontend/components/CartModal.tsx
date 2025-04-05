@@ -48,7 +48,7 @@ export default function CartModal() {
       {/* Cart Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 bg-primary text-white px-4 py-2 rounded-full hover:bg-teal-700 transition-colors"
+        className="fixed top-16 right-0 bg-primary text-white px-4 py-2 rounded-bl-lg hover:bg-teal-700 transition-colors"
       >
         Cart ({
           cart.reduce((sum, item) => sum + item.quantity, 0)
@@ -57,8 +57,8 @@ export default function CartModal() {
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 backdrop-brightness-50  flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-lg">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-black">Your Cart</h2>
               <button

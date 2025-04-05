@@ -34,6 +34,15 @@ export const getRestaurants = async (): Promise<Restaurant[]> => {
   return rows;
 };
 
+export const getRestaurantsForAdmin = async (): Promise<Restaurant[]> => {
+  const query = `
+    SELECT id, name, location, logo_url, owner_id, approved
+    FROM restaurants
+  `;
+  const { rows } = await pool.query(query);
+  return rows;
+};
+
 export const getRestaurantById = async (id: number): Promise<Restaurant | null> => {
   const query = `
     SELECT id, name, location, logo_url, owner_id, approved
@@ -48,15 +57,19 @@ export const updateRestaurant = async (
   id: number,
   name: string,
   location: string,
-  logo_url?: string
+  logo_url?: string,
+  approved?: boolean
 ): Promise<Restaurant | null> => {
   const query = `
     UPDATE restaurants
-    SET name = $2, location = $3, logo_url = $4
-    WHERE id = $1
+    SET name = $2, location = $3, logo_url = $4, approved = $5
+    WHERE id = $1    
     RETURNING id, name, location, logo_url, owner_id, approved
   `;
-  const { rows } = await pool.query(query, [id, name, location, logo_url]);
+  const { rows } = await pool.query(query, [id, name, location, logo_url, approved]);
+  if (rows.length === 0) {
+    return null; // No restaurant found with the given ID
+  }
   return rows[0] || null;
 };
 

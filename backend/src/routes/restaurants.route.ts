@@ -5,6 +5,7 @@ import {
   getRestaurantById,
   updateRestaurant,
   deleteRestaurant,
+  getRestaurantsForAdmin,
 } from "../models/restaurant.model";
 import { authenticate, restrictTo } from "../middleware/auth";
 
@@ -48,6 +49,21 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
+// Get all restaurants for admin (admin role only)
+router.get(
+  "/restaurantsAdmin",
+  authenticate,
+  restrictTo("admin"),
+  async (req: Request, res: Response) => {
+    try {
+      const restaurants = await getRestaurantsForAdmin();
+      res.json(restaurants);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  }
+);
+
 // Get restaurant by ID (public)
 router.get("/:id", (async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
@@ -85,6 +101,35 @@ router.put(
       }
 
       const updated = await updateRestaurant(id, name, location, logo_url);
+      res.json(updated);
+    } catch (err) {
+      res.status(500).json({ error: (err as Error).message });
+    }
+  }
+);
+
+// update restaurant approval status (admin only)
+router.put(
+  "/:id/approve",
+  authenticate,
+  restrictTo("admin"),
+  async (req: Request, res: Response): Promise<void> => {
+    const id = parseInt(req.params.id);
+    const { approved } = req.body;
+
+    if (approved === undefined) {
+      res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    try {
+      const restaurant = await getRestaurantById(id);
+      if (!restaurant) {
+        res.status(404).json({ error: "Restaurant not found" });
+        return;
+      }
+
+      const updated = await updateRestaurant(id, restaurant.name, restaurant.location, restaurant.logo_url, approved);
       res.json(updated);
     } catch (err) {
       res.status(500).json({ error: (err as Error).message });
