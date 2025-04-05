@@ -157,4 +157,12 @@ export const deleteRestaurant = async (id: number, token: string): Promise<void>
   await api.delete(`/restaurants/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 };
 
+
+export const getCustomerOrders = async (token: string): Promise<Order[]> => {
+  const response = await api.get<Order[]>('/orders/my-orders', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
 export default api;
