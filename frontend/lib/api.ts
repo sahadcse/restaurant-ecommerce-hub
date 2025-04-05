@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://192.168.1.102:3001", // Backend URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.102:3001", // Backend URL
   headers: {
     "Content-Type": "application/json",
   },
@@ -25,12 +25,18 @@ export interface MenuItem {
   image_url?: string;
 }
 
+// export interface CartItem extends MenuItem {
+//   quantity: number;
+// }
+
 export const getRestaurants = async (): Promise<Restaurant[]> => {
-  const response = await api.get<Restaurant[]>('/restaurants');
+  const response = await api.get<Restaurant[]>("/restaurants");
   return response.data;
 };
 
-export const getMenuItems = async (restaurantId: number): Promise<MenuItem[]> => {
+export const getMenuItems = async (
+  restaurantId: number
+): Promise<MenuItem[]> => {
   const response = await api.get<MenuItem[]>(`/menu/${restaurantId}`);
   return response.data;
 };
@@ -39,11 +45,10 @@ export interface Order {
   id: number;
   user_id: number;
   restaurant_id: number;
-  status: 'pending' | 'preparing' | 'shipped' | 'delivered';
+  status: "pending" | "preparing" | "shipped" | "delivered";
   total: number;
   created_at: string;
 }
-
 
 export const createOrder = async (
   restaurantId: number,
@@ -52,21 +57,21 @@ export const createOrder = async (
   token: string
 ): Promise<Order> => {
   const response = await api.post<Order>(
-    '/orders',
+    "/orders",
     { restaurant_id: restaurantId, items, total },
     { headers: { Authorization: `Bearer ${token}` } }
   );
-  console.log('Order response:', response);
+  console.log("Order response:", response);
   return response.data;
 };
 
 export const createMenuItem = async (
   restaurantId: number,
-  item: Omit<MenuItem, 'id' | 'restaurant_id'>,
+  item: Omit<MenuItem, "id" | "restaurant_id">,
   token: string
 ): Promise<MenuItem> => {
   const response = await api.post<MenuItem>(
-    '/menu',
+    "/menu",
     { restaurant_id: restaurantId, ...item },
     { headers: { Authorization: `Bearer ${token}` } }
   );
@@ -75,34 +80,40 @@ export const createMenuItem = async (
 
 export const updateMenuItem = async (
   id: number,
-  item: Omit<MenuItem, 'id' | 'restaurant_id'>,
+  item: Omit<MenuItem, "id" | "restaurant_id">,
   token: string
 ): Promise<MenuItem> => {
-  const response = await api.put<MenuItem>(
-    `/menu/${id}`,
-    item,
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+  const response = await api.put<MenuItem>(`/menu/${id}`, item, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   return response.data;
 };
 
-export const deleteMenuItem = async (id: number, token: string): Promise<void> => {
-  await api.delete(`/menu/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+export const deleteMenuItem = async (
+  id: number,
+  token: string
+): Promise<void> => {
+  await api.delete(`/menu/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 };
 
 export const getRestaurantOrders = async (
   restaurantId: number,
   token: string
 ): Promise<Order[]> => {
-  const response = await api.get<Order[]>(`/orders/restaurant/${restaurantId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await api.get<Order[]>(
+    `/orders/restaurant/${restaurantId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return response.data;
 };
 
 export const updateOrderStatus = async (
   orderId: number,
-  status: 'pending' | 'preparing' | 'shipped' | 'delivered',
+  status: "pending" | "preparing" | "shipped" | "delivered",
   token: string
 ): Promise<Order> => {
   const response = await api.put<Order>(
@@ -113,18 +124,25 @@ export const updateOrderStatus = async (
   return response.data;
 };
 
-export const getRestaurantByOwner = async (token: string): Promise<Restaurant> => {
-  const response = await api.get<Restaurant[]>('/restaurants', {
+export const getRestaurantByOwner = async (
+  token: string
+): Promise<Restaurant> => {
+  const response = await api.get<Restaurant[]>("/restaurants", {
     headers: { Authorization: `Bearer ${token}` },
   });
   // Assume first restaurant belongs to the owner (simplified for now)
   return response.data.find((r) => !r.approved) || response.data[0];
 };
 
-export const getAllRestaurantsForAdmin = async (token: string): Promise<Restaurant[]> => {
-  const response = await api.get<Restaurant[]>('/restaurants/restaurantsAdmin', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export const getAllRestaurantsForAdmin = async (
+  token: string
+): Promise<Restaurant[]> => {
+  const response = await api.get<Restaurant[]>(
+    "/restaurants/restaurantsAdmin",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return response.data; // Admin sees all restaurants
 };
 
@@ -145,24 +163,37 @@ export const updateStatusRestaurant = async (
   data: { approved: boolean },
   token: string
 ): Promise<Restaurant> => {
-  const response = await api.put<Restaurant>(`/restaurants/${id}/approve`, data, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const response = await api.put<Restaurant>(
+    `/restaurants/${id}/approve`,
+    data,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
   return response.data;
-}
-
-
-
-export const deleteRestaurant = async (id: number, token: string): Promise<void> => {
-  await api.delete(`/restaurants/${id}`, { headers: { Authorization: `Bearer ${token}` } });
 };
 
+export const deleteRestaurant = async (
+  id: number,
+  token: string
+): Promise<void> => {
+  await api.delete(`/restaurants/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
 
 export const getCustomerOrders = async (token: string): Promise<Order[]> => {
-  const response = await api.get<Order[]>('/orders/my-orders', {
+  const response = await api.get<Order[]>("/orders/my-orders", {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data;
 };
+
+// export const getCustomerOrders = async (token: string): Promise<Order[]> => {
+//   const response = await api.get<Order[]>('/orders/restaurant/', {
+//     headers: { Authorization: `Bearer ${token}` },
+//   });
+//   return response.data;
+// };
 
 export default api;

@@ -16,6 +16,7 @@ export default function RestaurantMenu() {
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { token } = useAuth();
+  const { logout } = useAuth();
 
   useEffect(() => {
     if (isNaN(restaurantId)) return;
@@ -41,22 +42,25 @@ export default function RestaurantMenu() {
           Restaurant Hub
         </Link>
         {token ? (
-          <>
-            <Link href="#" className="text-white hover:underline">
-              Logout(coming soon)
-            </Link>
-            <Link href="/dashboard/menu" className="text-white hover:underline">
-              Dashboard
-            </Link>
-          </>
+        <div className="flex gap-4">
+          <Link href="/" className="text-primary hover:underline">
+            Back to Home
+          </Link>
+          <button
+            onClick={logout}
+            className="text-red-400 hover:text-red-300"
+          >
+            Logout
+          </button>
+          <Link href="/dashboard/menu" className="text-white hover:underline">
+              DashboardRestaurant
+          </Link>
+        </div>
         ) : (
           <Link href="/login" className="text-white hover:underline">
             Login
           </Link>
         )}
-        <Link href="/" className="text-primary hover:underline">
-          Back to Home
-        </Link>
       </header>
 
       {/* Main Content */}

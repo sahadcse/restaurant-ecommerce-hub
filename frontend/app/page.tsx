@@ -6,9 +6,12 @@ import Image from "next/image";
 import Link from "next/link";
 import CartModal from "../components/CartModal";
 
+import { useAuth } from "../lib/authContext";
+
 export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const { token, logout } = useAuth();
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -29,12 +32,21 @@ export default function Home() {
       <header className="bg-black text-white p-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Restaurant Hub</h1>
         <div className="flex gap-4">
-          <Link href="/orders" className="text-primary hover:underline">
-            Orders
+          <Link href="/dashboard/orders" className="text-primary hover:underline">
+            OrdersRES
           </Link>
-          <Link href="/login" className="text-primary hover:underline">
-            Login
-          </Link>
+          {token ? (
+            <button
+              onClick={logout}
+              className="text-red-400 hover:text-red-300"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link href="/login" className="text-primary hover:underline">
+              Login
+            </Link>
+          )}
           <Link
             href="/admin/restaurants"
             className="text-primary hover:underline"
@@ -43,7 +55,13 @@ export default function Home() {
           </Link>
         </div>
       </header>
+
       <main className="max-w-4xl mx-auto p-6">
+        {token && (
+          <p className="text-lg text-gray-700 mb-4">
+            Welcome back! Explore your favorite restaurants.
+          </p>
+        )}
         <h2 className="text-3xl font-semibold mb-6 text-black">
           Explore Restaurants
         </h2>
