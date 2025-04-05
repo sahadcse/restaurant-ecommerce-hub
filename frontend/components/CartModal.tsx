@@ -1,25 +1,27 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useCart } from '../lib/cartContext';
-import { useAuth } from '../lib/authContext';
-import Image from 'next/image';
+import { useState } from "react";
+import { useCart } from "../lib/cartContext";
+import { useAuth } from "../lib/authContext";
+import Image from "next/image";
 
-import { createOrder } from '../lib/api';
+import { createOrder } from "../lib/api";
 
 export default function CartModal() {
-  const { cart, removeFromCart, clearCart } = useCart();
+  const { cart, addToCart, removeFromCart, clearCart } = useCart();
   const { token } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const total = cart.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
-
+  const total = cart.reduce(
+    (sum, item) => sum + Number(item.price) * item.quantity,
+    0
+  );
 
   const handleCheckout = async () => {
     if (!token) {
-      alert('Please log in to checkout.');
+      alert("Please log in to checkout.");
       return;
     }
 
@@ -36,10 +38,20 @@ export default function CartModal() {
       setOrderSuccess(true);
       clearCart();
     } catch (err) {
-      console.error('Checkout error:', err);
-      alert('Checkout failed. Please try again.');
+      console.error("Checkout error:", err);
+      alert("Checkout failed. Please try again.");
     } finally {
       setIsCheckingOut(false);
+    }
+  };
+
+  const updateQuantity = (id: number, delta: number) => {
+    const item = cart.find((i) => i.id === id);
+    if (!item) return;
+    if (item.quantity + delta <= 0) {
+      removeFromCart(id);
+    } else {
+      addToCart({ ...item, quantity: item.quantity + delta }); // Correctly adjust quantity
     }
   };
 
@@ -50,9 +62,7 @@ export default function CartModal() {
         onClick={() => setIsOpen(true)}
         className="fixed top-16 right-0 bg-primary text-white px-4 py-2 rounded-bl-lg hover:bg-teal-700 transition-colors"
       >
-        Cart ({
-          cart.reduce((sum, item) => sum + item.quantity, 0)
-        })
+        Cart ({cart.reduce((sum, item) => sum + item.quantity, 0)})
       </button>
 
       {/* Modal */}
@@ -70,7 +80,9 @@ export default function CartModal() {
             </div>
             {orderSuccess ? (
               <div className="text-center">
-                <p className="text-green-600 text-lg mb-4">Order placed successfully!</p>
+                <p className="text-green-600 text-lg mb-4">
+                  Order placed successfully!
+                </p>
                 <button
                   onClick={() => {
                     setOrderSuccess(false);
@@ -102,11 +114,30 @@ export default function CartModal() {
                         </div>
                       )}
                       <div className="flex-1">
-                        <h3 className="text-lg font-medium text-black">{item.name}</h3>
+                        <h3 className="text-lg font-medium text-black">
+                          {item.name}
+                        </h3>
                         <p className="text-gray-600">
-                        ${Number(item.price).toFixed(2)} x {item.quantity}
+                          ${Number(item.price).toFixed(2)} x {item.quantity}
                         </p>
                       </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateQuantity(item.id, -1)}
+                          className="bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300 transition-colors"
+                        >
+                          -
+                        </button>
+                        <span>{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.id, 1)}
+                          className="bg-gray-200 text-gray-600 px-2 py-1 rounded hover:bg-gray-300 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+
                       <button
                         onClick={() => removeFromCart(item.id)}
                         className="text-red-500 hover:text-red-700"
@@ -132,7 +163,7 @@ export default function CartModal() {
                       disabled={isCheckingOut}
                       className="bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors disabled:bg-teal-400"
                     >
-                      {isCheckingOut ? 'Processing...' : 'Checkout'}
+                      {isCheckingOut ? "Processing..." : "Checkout"}
                     </button>
                   </div>
                 </div>
