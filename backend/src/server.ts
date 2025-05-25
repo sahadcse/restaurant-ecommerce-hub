@@ -1,43 +1,46 @@
-import express, { Request, Response } from 'express';
-import dotenv from 'dotenv';
-import pool from './db';
-import authRouter from './routes/auth.route';
-import restaurantRouter from './routes/restaurants.route';
-import menuRouter from './routes/menu.route';
-import orderRouter from './routes/orders.route';
-import cors from 'cors';
+import dotenv from "dotenv";
+import app from "./app"; // Import the configured app instance
+import prisma from "./db"; // Import the Prisma client
+import logger from "./utils/logger"; // Import the logger
 
 dotenv.config();
-const app = express();
 const port: number = Number(process.env.PORT) || 3001;
 
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: '*', // Allow requests from any origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,
-}));
-
-app.use('/auth', authRouter);
-app.use('/restaurants', restaurantRouter);
-app.use('/menu', menuRouter);
-app.use('/orders', orderRouter);
-
-app.get('/', (req: Request, res: Response) => {
-  res.send('Restaurant E-Commerce Hub Backend (TypeScript)');
-});
-
-app.get('/db-test', async (req: Request, res: Response) => {
+// Function to start the server after checking DB connection
+const startServer = async () => {
   try {
-    const result = await pool.query('SELECT NOW()');
-    res.json({ message: 'Database connected', time: result.rows[0].now });
+    // Test the database connection with Prisma
+    await prisma.$connect();
+    logger.info("Database connected successfully.");
+
+    // Start the server if DB connection is successful
+    app.listen(port, () => {
+      logger.info(`Server running on port ${port}`);
+    });
   } catch (err) {
-    res.status(500).json({ error: (err as Error).message });
+    logger.error(
+      `Failed to connect to the database: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
+    process.exit(1); // Exit the process if DB connection fails
   }
+};
+
+// Process-level error handling
+process.on("uncaughtException", (error) => {
+  logger.error(`Uncaught Exception: ${error.message}`, { stack: error.stack });
+  process.exit(1);
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+process.on("unhandledRejection", (reason) => {
+  logger.error(
+    `Unhandled Rejection: ${
+      reason instanceof Error ? reason.message : String(reason)
+    }`
+  );
+  process.exit(1);
 });
+
+// Call the function to start the server
+startServer();

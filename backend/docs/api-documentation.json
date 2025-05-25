@@ -1,0 +1,2252 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Restaurant E-commerce Hub API",
+    "description": "API documentation for the Restaurant E-commerce Hub platform",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@restaurant-hub.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api",
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://api.restaurant-hub.com",
+      "description": "Production Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "User",
+      "description": "User management operations"
+    },
+    {
+      "name": "Restaurant",
+      "description": "Restaurant management operations"
+    },
+    {
+      "name": "Setup",
+      "description": "Initial setup operations"
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication operations"
+    },
+    {
+      "name": "Admin",
+      "description": "Admin operations"
+    },
+    {
+      "name": "System",
+      "description": "System operations"
+    },
+    {
+      "name": "Media",
+      "description": "Media file upload and management operations"
+    }
+  ],
+  "paths": {
+    "/users/register": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Register a new user (Legacy)",
+        "description": "Create a new user account with required profile information. This is a legacy endpoint - use role-specific endpoints instead.",
+        "deprecated": true,
+        "operationId": "registerUser",
+        "requestBody": {
+          "description": "User registration information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegistration"
+              },
+              "example": {
+                "email": "user@example.com",
+                "password": "Password123!",
+                "firstName": "John",
+                "lastName": "Doe",
+                "phoneNumber": "+1234567890",
+                "privacyConsent": true,
+                "deviceInfo": {
+                  "type": "desktop",
+                  "platform": "Windows",
+                  "browser": "Chrome"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "User registered successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "$ref": "#/components/schemas/UserResponse"
+                        },
+                        "token": {
+                          "type": "string",
+                          "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "emailExists": {
+                    "value": {
+                      "success": false,
+                      "message": "Email already in use",
+                      "error": "Bad Request"
+                    }
+                  },
+                  "invalidEmail": {
+                    "value": {
+                      "success": false,
+                      "message": "Invalid email format",
+                      "error": "Bad Request"
+                    }
+                  },
+                  "weakPassword": {
+                    "value": {
+                      "success": false,
+                      "message": "Password must be at least 4 characters",
+                      "error": "Bad Request"
+                    }
+                  },
+                  "missingConsent": {
+                    "value": {
+                      "success": false,
+                      "message": "You must accept the privacy policy",
+                      "error": "Bad Request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/register/customer": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Register a new customer",
+        "description": "Create a new customer account with required profile information",
+        "operationId": "registerCustomer",
+        "requestBody": {
+          "description": "Customer registration information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRegistration"
+              },
+              "example": {
+                "email": "customer@example.com",
+                "password": "Password123!",
+                "firstName": "John",
+                "lastName": "Doe",
+                "phoneNumber": "+1234567890",
+                "privacyConsent": true,
+                "deviceInfo": {
+                  "type": "desktop",
+                  "platform": "Windows",
+                  "browser": "Chrome"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/register/restaurant-owner": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Register a new restaurant owner",
+        "description": "Create a new restaurant owner account. Business details will be added in a separate step after registration.",
+        "operationId": "registerRestaurantOwner",
+        "requestBody": {
+          "description": "Restaurant owner registration information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRegistration"
+              },
+              "example": {
+                "email": "owner@restaurant.com",
+                "password": "Password123!",
+                "firstName": "Jane",
+                "lastName": "Smith",
+                "phoneNumber": "+1234567890",
+                "privacyConsent": true,
+                "deviceInfo": {
+                  "type": "desktop",
+                  "platform": "Windows",
+                  "browser": "Chrome"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Restaurant owner registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/register/restaurant-staff": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Register restaurant staff",
+        "description": "Create a new restaurant staff account. Requires a restaurant ID to associate the staff with.",
+        "operationId": "registerRestaurantStaff",
+        "requestBody": {
+          "description": "Restaurant staff registration information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/CustomerRegistration"
+                  },
+                  {
+                    "type": "object",
+                    "required": ["restaurantId"],
+                    "properties": {
+                      "restaurantId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID of the restaurant where the staff member works"
+                      }
+                    }
+                  }
+                ]
+              },
+              "example": {
+                "email": "staff@restaurant.com",
+                "password": "Password123!",
+                "firstName": "Staff",
+                "lastName": "Member",
+                "phoneNumber": "+1234567890",
+                "privacyConsent": true,
+                "restaurantId": "550e8400-e29b-41d4-a716-446655440000",
+                "deviceInfo": {
+                  "type": "desktop",
+                  "platform": "Windows",
+                  "browser": "Chrome"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Restaurant staff registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input or validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/register/admin": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Register a new admin (SUPER_ADMIN only)",
+        "description": "Create a new admin account. Only accessible to SUPER_ADMIN users. A temporary password is generated for the new admin.",
+        "operationId": "registerAdmin",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Admin registration information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Admin's email address (must be unique)"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "description": "Admin's first name"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "description": "Admin's last name"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "description": "Admin's phone number (must be unique if provided)"
+                  }
+                }
+              },
+              "example": {
+                "email": "admin@example.com",
+                "firstName": "Admin",
+                "lastName": "User",
+                "phoneNumber": "+1234567890"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Admin registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Admin account created successfully. Please securely share the credentials with the new admin."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "$ref": "#/components/schemas/UserResponse"
+                        },
+                        "temporaryPassword": {
+                          "type": "string",
+                          "example": "P@ssword123!"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a SUPER_ADMIN user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Only SUPER_ADMIN can create admin accounts",
+                  "error": "Forbidden"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/setup/super-admin": {
+      "post": {
+        "tags": ["User", "Setup"],
+        "summary": "Create the first SUPER_ADMIN (initial setup)",
+        "description": "Create the first SUPER_ADMIN user in the system. This endpoint can only be called once, when no SUPER_ADMIN exists. Protected by a setup key.",
+        "operationId": "createFirstSuperAdmin",
+        "requestBody": {
+          "description": "SUPER_ADMIN creation information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "setupKey"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "SUPER_ADMIN's email address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "description": "SUPER_ADMIN's password (minimum 8 characters)"
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "description": "SUPER_ADMIN's first name"
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "description": "SUPER_ADMIN's last name"
+                  },
+                  "phoneNumber": {
+                    "type": "string",
+                    "description": "SUPER_ADMIN's phone number"
+                  },
+                  "setupKey": {
+                    "type": "string",
+                    "description": "Secret key to authorize initial setup (defined in INITIAL_SETUP_KEY env variable)"
+                  }
+                }
+              },
+              "example": {
+                "email": "superadmin@example.com",
+                "password": "SuperSecure123!",
+                "firstName": "Super",
+                "lastName": "Admin",
+                "phoneNumber": "+1234567890",
+                "setupKey": "your-setup-key-here"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "SUPER_ADMIN created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "SUPER_ADMIN created successfully. Store these credentials securely."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "$ref": "#/components/schemas/UserResponse"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input or SUPER_ADMIN already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "superAdminExists": {
+                    "value": {
+                      "success": false,
+                      "message": "A SUPER_ADMIN already exists in the system",
+                      "error": "Bad Request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Invalid setup key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Invalid or missing setup key",
+                  "error": "Forbidden"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/restaurants": {
+      "post": {
+        "tags": ["Restaurant"],
+        "summary": "Create a new restaurant",
+        "description": "Add business details for a restaurant owner. This should be called after registration.",
+        "operationId": "createRestaurant",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Restaurant business information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestaurantCreate"
+              },
+              "example": {
+                "name": "Delicious Bites",
+                "description": "Authentic Italian cuisine with a modern twist",
+                "address": {
+                  "street": "123 Main Street",
+                  "city": "Foodville",
+                  "state": "NY",
+                  "postalCode": "10001",
+                  "country": "USA"
+                },
+                "phoneNumber": "+1234567890",
+                "email": "contact@deliciousbites.com",
+                "openingHours": {
+                  "monday": "11:00-22:00",
+                  "tuesday": "11:00-22:00",
+                  "wednesday": "11:00-22:00",
+                  "thursday": "11:00-22:00",
+                  "friday": "11:00-23:00",
+                  "saturday": "12:00-23:00",
+                  "sunday": "12:00-21:00"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Restaurant created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Restaurant created successfully"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Restaurant"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not a restaurant owner",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/verify-email/{token}": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Verify user email",
+        "description": "Verify a user's email address using the verification token sent to their email",
+        "operationId": "verifyEmail",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Email verification token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Email verified successfully. You can now login to your account."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired verification token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Invalid or expired verification token"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "User not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/resend-verification": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Resend verification email",
+        "description": "Resend verification email to a user who has not yet verified their account",
+        "operationId": "resendVerificationEmail",
+        "requestBody": {
+          "description": "Email address for which to resend verification",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              },
+              "example": {
+                "email": "user@example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification email resent (or email not found/already verified)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "If your email is registered and not verified, a new verification email has been sent."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Invalid email format"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password/reset-request": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Request password reset",
+        "description": "Request a password reset. A reset link will be sent to the provided email if it exists in the system.",
+        "operationId": "requestPasswordReset",
+        "requestBody": {
+          "description": "Email address for which to reset password",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailRequest"
+              },
+              "example": {
+                "email": "user@example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset request processed (email will be sent if user exists)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "If your email exists in our system, you will receive password reset instructions."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid email format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password/reset-confirm": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Confirm password reset",
+        "description": "Reset user's password using the token received via email",
+        "operationId": "confirmPasswordReset",
+        "requestBody": {
+          "description": "Reset token and new password",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetConfirm"
+              },
+              "example": {
+                "token": "email|reset-token",
+                "newPassword": "NewSecure123!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Password has been reset successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token or password requirements not met",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalidToken": {
+                    "value": {
+                      "status": "error",
+                      "message": "Invalid or expired reset token"
+                    }
+                  },
+                  "passwordRequirements": {
+                    "value": {
+                      "status": "error",
+                      "message": "Password must be at least 8 characters"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login to the system",
+        "description": "Authenticate with email and password to receive access and refresh tokens",
+        "operationId": "login",
+        "requestBody": {
+          "description": "User credentials",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "example": {
+                "email": "user@example.com",
+                "password": "Password123!",
+                "rememberMe": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid email or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Invalid email or password"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Account not active or verification required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "notVerified": {
+                    "value": {
+                      "status": "error",
+                      "message": "Please verify your account before logging in"
+                    }
+                  },
+                  "suspended": {
+                    "value": {
+                      "status": "error",
+                      "message": "Your account has been suspended"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "description": "Get a new access token using refresh token when the original access token expires",
+        "operationId": "refreshToken",
+        "requestBody": {
+          "description": "Refresh token",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              },
+              "example": {
+                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refresh successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Invalid or expired refresh token"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout from the system",
+        "description": "Revoke the current session or optionally all user sessions",
+        "operationId": "logout",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "all",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "If true, revokes all sessions for the user (logout from all devices)"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Logout successful (no content)"
+          },
+          "400": {
+            "description": "No token provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get current user information",
+        "description": "Retrieve information about the currently authenticated user",
+        "operationId": "getCurrentUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/UserResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/password/change": {
+      "put": {
+        "tags": ["Auth"],
+        "summary": "Change password",
+        "description": "Change the password for the currently authenticated user",
+        "operationId": "changePassword",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Current and new password",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeRequest"
+              },
+              "example": {
+                "currentPassword": "OldPassword123!",
+                "newPassword": "NewPassword456!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Password changed successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid current password or new password requirements not met",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "incorrectPassword": {
+                    "value": {
+                      "status": "error",
+                      "message": "Current password is incorrect"
+                    }
+                  },
+                  "passwordRequirements": {
+                    "value": {
+                      "status": "error",
+                      "message": "Password must be at least 8 characters"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/system/test-email": {
+      "get": {
+        "tags": ["Admin", "System"],
+        "summary": "Test email configuration",
+        "description": "Verify that the email service is properly configured and can send emails",
+        "operationId": "testEmailSetup",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email configuration is working",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Email connection successful. Your configuration is working."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email configuration failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Authentication failed. Check your email address and password or OAuth credentials."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Not an admin user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Forbidden: Admin access required"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/upload": {
+      "post": {
+        "tags": ["Media"],
+        "summary": "Upload a file to Cloudinary",
+        "description": "Upload an image, video, or document file to Cloudinary storage",
+        "operationId": "uploadFile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "File to upload",
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The file to upload (image, video, or PDF)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaUploadResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - No file provided or invalid file type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "noFile": {
+                    "value": {
+                      "success": false,
+                      "message": "No file provided"
+                    }
+                  },
+                  "invalidType": {
+                    "value": {
+                      "success": false,
+                      "message": "Unsupported file type. Only images, videos and PDFs are allowed."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large - File exceeds size limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "File size exceeds the maximum allowed limit"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/{publicId}": {
+      "delete": {
+        "tags": ["Media"],
+        "summary": "Delete a file from Cloudinary",
+        "description": "Remove a previously uploaded file from Cloudinary storage",
+        "operationId": "deleteFile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The public ID of the file to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "File restaurant_hub/images/123456789 deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid public ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Public ID is required"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/{publicId}/metadata": {
+      "get": {
+        "tags": ["Media"],
+        "summary": "Get file metadata",
+        "description": "Retrieve metadata for a previously uploaded file",
+        "operationId": "getFileMetadata",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "publicId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The public ID of the file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File metadata retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AdminApiResource"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid public ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Public ID is required"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Not authenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "success": false,
+                  "message": "File with ID restaurant_hub/images/123456789 not found"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserRegistration": {
+        "type": "object",
+        "required": ["email", "password", "privacyConsent"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address (must be unique)"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "User's password (minimum 4 characters)"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "User's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "User's last name"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "User's phone number (must be unique if provided)"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "CUSTOMER",
+              "RESTAURANT_OWNER",
+              "RESTAURANT_STAFF",
+              "ADMIN",
+              "SUPER_ADMIN"
+            ],
+            "description": "User's role (defaults to CUSTOMER if not specified)"
+          },
+          "privacyConsent": {
+            "type": "boolean",
+            "description": "Indicates whether the user has given consent to the privacy policy (must be true)"
+          },
+          "deviceInfo": {
+            "type": "object",
+            "description": "Information about the user's device (optional)",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "Device type (e.g., mobile, desktop)"
+              },
+              "platform": {
+                "type": "string",
+                "description": "Operating system platform"
+              },
+              "browser": {
+                "type": "string",
+                "description": "Browser information"
+              }
+            }
+          }
+        }
+      },
+      "CustomerRegistration": {
+        "type": "object",
+        "required": ["email", "password", "privacyConsent"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address (must be unique)"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "User's password (minimum 4 characters)"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "User's first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "User's last name"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "User's phone number (must be unique if provided)"
+          },
+          "privacyConsent": {
+            "type": "boolean",
+            "description": "Indicates whether the user has given consent to the privacy policy (must be true)"
+          }
+        }
+      },
+      "RestaurantOwnerRegistration": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CustomerRegistration"
+          },
+          {
+            "type": "object",
+            "required": ["businessName"],
+            "properties": {
+              "businessName": {
+                "type": "string",
+                "description": "Name of the restaurant business"
+              },
+              "businessAddress": {
+                "type": "string",
+                "description": "Address of the restaurant business"
+              }
+            }
+          }
+        ]
+      },
+      "RegistrationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "CUSTOMER registered successfully"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": {
+                "$ref": "#/components/schemas/UserResponse"
+              },
+              "token": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              },
+              "expiresAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User's unique identifier"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true,
+            "description": "User's first name (if provided)"
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true,
+            "description": "User's last name (if provided)"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true,
+            "description": "User's phone number (if provided)"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "CUSTOMER",
+              "RESTAURANT_OWNER",
+              "RESTAURANT_STAFF",
+              "ADMIN",
+              "SUPER_ADMIN"
+            ],
+            "description": "User's role in the system"
+          },
+          "accountStatus": {
+            "type": "string",
+            "enum": ["ACTIVE", "SUSPENDED", "PENDING_VERIFICATION"],
+            "description": "Current status of the user's account"
+          },
+          "privacyConsent": {
+            "type": "boolean",
+            "description": "Indicates whether the user has given consent to the privacy policy"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Date and time when the user was created"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message describing what went wrong"
+          },
+          "error": {
+            "type": "string",
+            "description": "Error type or code"
+          },
+          "stack": {
+            "type": "string",
+            "description": "Stack trace (only included in development environment)"
+          }
+        }
+      },
+      "RestaurantCreate": {
+        "type": "object",
+        "required": ["name", "address", "phoneNumber"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the restaurant"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the restaurant and its cuisine"
+          },
+          "address": {
+            "type": "object",
+            "required": ["street", "city", "state", "postalCode", "country"],
+            "properties": {
+              "street": {
+                "type": "string",
+                "description": "Street address"
+              },
+              "city": {
+                "type": "string",
+                "description": "City"
+              },
+              "state": {
+                "type": "string",
+                "description": "State or province"
+              },
+              "postalCode": {
+                "type": "string",
+                "description": "Postal code or ZIP code"
+              },
+              "country": {
+                "type": "string",
+                "description": "Country"
+              }
+            }
+          },
+          "phoneNumber": {
+            "type": "string",
+            "description": "Contact phone number for the restaurant"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Contact email for the restaurant"
+          },
+          "openingHours": {
+            "type": "object",
+            "description": "Restaurant opening hours by day of week",
+            "properties": {
+              "monday": {
+                "type": "string",
+                "description": "Opening hours on Monday (format: HH:MM-HH:MM)"
+              },
+              "tuesday": {
+                "type": "string",
+                "description": "Opening hours on Tuesday"
+              },
+              "wednesday": {
+                "type": "string",
+                "description": "Opening hours on Wednesday"
+              },
+              "thursday": {
+                "type": "string",
+                "description": "Opening hours on Thursday"
+              },
+              "friday": {
+                "type": "string",
+                "description": "Opening hours on Friday"
+              },
+              "saturday": {
+                "type": "string",
+                "description": "Opening hours on Saturday"
+              },
+              "sunday": {
+                "type": "string",
+                "description": "Opening hours on Sunday"
+              }
+            }
+          }
+        }
+      },
+      "Restaurant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier for the restaurant"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the restaurant"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the restaurant and its cuisine"
+          },
+          "address": {
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "postalCode": {
+                "type": "string"
+              },
+              "country": {
+                "type": "string"
+              }
+            }
+          },
+          "phoneNumber": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "ownerId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "ID of the restaurant owner"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the restaurant is currently active"
+          },
+          "openingHours": {
+            "type": "object"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "EmailRequest": {
+        "type": "object",
+        "required": ["email"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address"
+          }
+        }
+      },
+      "PasswordResetConfirm": {
+        "type": "object",
+        "required": ["token", "newPassword"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Password reset token received via email"
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "New password (must meet strength requirements)"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "description": "User's password"
+          },
+          "rememberMe": {
+            "type": "boolean",
+            "description": "If true, the session will be extended (e.g., 30 days)"
+          }
+        }
+      },
+      "RefreshTokenRequest": {
+        "type": "object",
+        "required": ["refreshToken"],
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token received during login or previous refresh"
+          }
+        }
+      },
+      "PasswordChangeRequest": {
+        "type": "object",
+        "required": ["currentPassword", "newPassword"],
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "User's current password"
+          },
+          "newPassword": {
+            "type": "string",
+            "format": "password",
+            "description": "User's new password (must meet password requirements)"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "email": {
+                "type": "string",
+                "format": "email"
+              },
+              "firstName": {
+                "type": "string",
+                "nullable": true
+              },
+              "lastName": {
+                "type": "string",
+                "nullable": true
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "CUSTOMER",
+                  "RESTAURANT_OWNER",
+                  "RESTAURANT_STAFF",
+                  "ADMIN",
+                  "SUPER_ADMIN"
+                ]
+              },
+              "accountStatus": {
+                "type": "string",
+                "enum": ["ACTIVE", "SUSPENDED", "PENDING_VERIFICATION"]
+              }
+            }
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/TokenResponse"
+          }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "JWT access token"
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "JWT refresh token"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Token expiration time in seconds"
+          },
+          "tokenType": {
+            "type": "string",
+            "example": "Bearer"
+          }
+        }
+      },
+      "MediaUploadResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "publicId": {
+                "type": "string",
+                "example": "restaurant_hub/images/1654321987-123456789"
+              },
+              "url": {
+                "type": "string",
+                "example": "http://res.cloudinary.com/dwfmhvsk2/image/upload/v1654321987/restaurant_hub/images/1654321987-123456789.jpg"
+              },
+              "secureUrl": {
+                "type": "string",
+                "example": "https://res.cloudinary.com/dwfmhvsk2/image/upload/v1654321987/restaurant_hub/images/1654321987-123456789.jpg"
+              },
+              "format": {
+                "type": "string",
+                "example": "jpg"
+              },
+              "resourceType": {
+                "type": "string",
+                "example": "image"
+              },
+              "originalFilename": {
+                "type": "string",
+                "example": "menu-item.jpg"
+              },
+              "width": {
+                "type": "integer",
+                "example": 800
+              },
+              "height": {
+                "type": "integer",
+                "example": 600
+              },
+              "size": {
+                "type": "integer",
+                "example": 152845
+              }
+            }
+          }
+        }
+      },
+      "AdminApiResource": {
+        "type": "object",
+        "properties": {
+          "public_id": {
+            "type": "string",
+            "example": "restaurant_hub/images/1654321987-123456789"
+          },
+          "version": {
+            "type": "integer",
+            "example": 1654321987
+          },
+          "signature": {
+            "type": "string",
+            "example": "a1b2c3d4e5f6g7h8i9j0"
+          },
+          "width": {
+            "type": "integer",
+            "example": 800
+          },
+          "height": {
+            "type": "integer",
+            "example": 600
+          },
+          "format": {
+            "type": "string",
+            "example": "jpg"
+          },
+          "resource_type": {
+            "type": "string",
+            "example": "image"
+          },
+          "created_at": {
+            "type": "string",
+            "example": "2023-01-15T12:34:56Z"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": []
+          },
+          "bytes": {
+            "type": "integer",
+            "example": 152845
+          },
+          "type": {
+            "type": "string",
+            "example": "upload"
+          },
+          "etag": {
+            "type": "string",
+            "example": "b1c2d3e4f5g6"
+          },
+          "url": {
+            "type": "string",
+            "example": "http://res.cloudinary.com/dwfmhvsk2/image/upload/v1654321987/restaurant_hub/images/1654321987-123456789.jpg"
+          },
+          "secure_url": {
+            "type": "string",
+            "example": "https://res.cloudinary.com/dwfmhvsk2/image/upload/v1654321987/restaurant_hub/images/1654321987-123456789.jpg"
+          },
+          "access_mode": {
+            "type": "string",
+            "example": "public"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
+      }
+    }
+  }
+}

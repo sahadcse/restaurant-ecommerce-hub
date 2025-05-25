@@ -1,0 +1,1634 @@
+// file path: restaurant-ecommerce-hub\backend\prisma\analytics.prisma
+// file name: analytics.prisma
+// purpose: Defines models for capturing analytics events and user search queries.
+
+//-----------------------------------------------------------------------------
+// Analytics & Reporting
+//-----------------------------------------------------------------------------
+model AnalyticsEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid // Optional: Link to user if logged in
+  eventType String   @map("event_type") // e.g., PAGE_VIEW, ADD_TO_CART, ORDER_PLACED
+  sessionId String?  @map("session_id") @db.Uuid // Link to Session model if available
+  payload   Json     @db.JsonB // Event-specific data (e.g., page URL, item ID, order total)
+  timestamp DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+  session   Session? @relation(fields: [sessionId], references: [id]) // Relation to Session
+  tenantId  String   @map("tenant_id") @db.Uuid
+
+  @@index([eventType])
+  @@index([timestamp])
+  @@index([userId])
+  @@index([sessionId]) // Added index
+  @@index([tenantId])
+  @@map("analytics_events")
+}
+
+model SearchQuery {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid // Optional: Link to user if logged in
+  query        String
+  resultsCount Int      @map("results_count")
+  filters      Json?    @db.JsonB // Filters applied (e.g., category, price range)
+  sessionId    String?  @map("session_id") @db.Uuid // Link to Session model
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User?    @relation(fields: [userId], references: [id])
+  session      Session? @relation(fields: [sessionId], references: [id]) // Relation to Session
+  tenantId     String   @map("tenant_id") @db.Uuid
+
+  @@index([userId])
+  @@index([sessionId]) // Added index
+  @@index([createdAt]) // Added index
+  @@index([tenantId])
+  @@map("search_queries")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\blog.prisma
+// file name: blog.prisma
+// purpose: Defines models related to the blog feature, including posts, categories, tags, and comments.
+
+//-----------------------------------------------------------------------------
+// Blog System Models
+//-----------------------------------------------------------------------------
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("blog_post_status")
+}
+
+model BlogCategory {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  posts       BlogPost[]
+  tenantId    String?    @map("tenant_id") @db.Uuid // Optional: If categories are tenant-specific
+
+  @@index([tenantId])
+  @@index([slug])
+  @@map("blog_categories")
+}
+
+model BlogPost {
+  id            String         @id @default(uuid()) @db.Uuid
+  title         String
+  slug          String         @unique
+  content       String         @db.Text // Use Text for potentially long content
+  excerpt       String? // Short summary
+  imageUrl      String?        @map("image_url")
+  status        BlogPostStatus @default(DRAFT)
+  publishedAt   DateTime?      @map("published_at")
+  authorId      String         @map("author_id") @db.Uuid
+  categoryId    String?        @map("category_id") @db.Uuid
+  views         Int            @default(0)
+  allowComments Boolean        @default(true) @map("allow_comments")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  tenantId      String?        @map("tenant_id") @db.Uuid // Optional: If posts are tenant-specific
+
+  author   User              @relation("UserBlogPosts", fields: [authorId], references: [id])
+  category BlogCategory?     @relation(fields: [categoryId], references: [id])
+  comments BlogComment[]
+  tags     BlogPostsOnTags[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([publishedAt])
+  @@index([tenantId])
+  @@index([slug])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@map("blog_posts")
+}
+
+model BlogTag {
+  id        String            @id @default(uuid()) @db.Uuid
+  name      String            @unique
+  slug      String            @unique
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+  posts     BlogPostsOnTags[]
+  tenantId  String?           @map("tenant_id") @db.Uuid // Optional: If tags are tenant-specific
+
+  @@index([tenantId])
+  @@index([slug])
+  @@map("blog_tags")
+}
+
+// Join table for BlogPost and BlogTag (Many-to-Many)
+model BlogPostsOnTags {
+  postId     String   @map("post_id") @db.Uuid
+  tagId      String   @map("tag_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  post BlogPost @relation(fields: [postId], references: [id])
+  tag  BlogTag  @relation(fields: [tagId], references: [id])
+
+  @@id([postId, tagId])
+  @@index([tagId])
+  @@map("blog_posts_on_tags")
+}
+
+model BlogComment {
+  id         String   @id @default(uuid()) @db.Uuid
+  postId     String   @map("post_id") @db.Uuid
+  authorId   String   @map("author_id") @db.Uuid // User who wrote the comment
+  content    String
+  parentId   String?  @map("parent_id") @db.Uuid // For nested comments/replies
+  isApproved Boolean  @default(true) @map("is_approved") // Moderation status
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  tenantId   String?  @map("tenant_id") @db.Uuid // Optional: If comments are tenant-specific
+
+  post    BlogPost      @relation(fields: [postId], references: [id])
+  author  User          @relation("UserBlogComments", fields: [authorId], references: [id])
+  parent  BlogComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies BlogComment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([isApproved])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("blog_comments")
+}
+
+// file path: e:\WORKS\PortfolioProjects\ProjectsPP\restaurant-ecommerce-hub\backend\prisma\cart.prisma
+// file name: cart.prisma
+// purpose: Defines models for persistent shopping cart storage.
+
+//-----------------------------------------------------------------------------
+// Cart Models
+//-----------------------------------------------------------------------------
+
+model Cart {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid // Each user has one cart
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  tenantId  String   @map("tenant_id") @db.Uuid // Assuming carts are tenant-specific
+
+  user  User       @relation(fields: [userId], references: [id])
+  items CartItem[]
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([updatedAt]) // Useful for cleaning up old carts
+  @@map("carts")
+}
+
+model CartItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  cartId     String   @map("cart_id") @db.Uuid
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  variantId  String?  @map("variant_id") @db.Uuid // Optional: if the item has variants
+  quantity   Int
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  cart     Cart             @relation(fields: [cartId], references: [id], onDelete: Cascade) // Cascade delete items if cart is deleted
+  menuItem MenuItem         @relation(fields: [menuItemId], references: [id], name: "CartItem_MenuItem")
+  variant  MenuItemVariant? @relation(fields: [variantId], references: [id], name: "CartItem_Variant")
+
+  @@unique([cartId, menuItemId, variantId]) // Prevent duplicate items (with same variant or no variant) in the same cart
+  @@index([cartId])
+  @@index([menuItemId])
+  @@index([variantId])
+  @@map("cart_items")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\content.prisma
+// file name: content.prisma
+// purpose: Defines models related to website content management, like sliders, banners, and promotional sections.
+
+//-----------------------------------------------------------------------------
+// Content Management Models
+//-----------------------------------------------------------------------------
+
+model HeroSlider {
+  id           String         @id @default(uuid()) @db.Uuid
+  title        String
+  description  String?
+  imageUrl     String         @map("image_url")
+  price        Float? // Added: Starting price
+  buttonText   String?        @map("button_text") // Added: Button label
+  linkUrl      String?        @map("link_url") // URL for the campaign, page, restaurant, etc.
+  linkType     SliderLinkType @default(NONE) @map("link_type") // Type of link (e.g., RESTAURANT, CAMPAIGN)
+  linkTargetId String?        @map("link_target_id") @db.Uuid // Optional: ID of the linked entity (e.g., Restaurant ID, MenuItem ID)
+  displayOrder Int            @default(0) @map("display_order") // Order in which sliders appear
+  isActive     Boolean        @default(true) @map("is_active")
+  startDate    DateTime?      @map("start_date") // Optional: When the slider becomes active
+  endDate      DateTime?      @map("end_date") // Optional: When the slider expires
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  tenantId     String?        @map("tenant_id") @db.Uuid // Optional: If sliders are tenant-specific
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([tenantId])
+  @@index([startDate, endDate])
+  @@index([linkType]) // Added index
+  @@index([updatedAt]) // Added index
+  @@map("hero_sliders")
+}
+
+// Model for "Deal of the Day" sections
+model DealSection {
+  id           String     @id @default(uuid()) @db.Uuid
+  title        String // e.g., "Day of the deal"
+  subtitle     String? // e.g., "Don't wait. The time will never be just right."
+  timerDays    Int?       @map("timer_days") // Optional countdown days
+  timerHours   Int?       @map("timer_hours") // Optional countdown hours
+  timerMinutes Int?       @map("timer_minutes") // Optional countdown minutes
+  isActive     Boolean    @default(true) @map("is_active") // Added active status
+  startDate    DateTime?  @map("start_date") // Optional: When the deal becomes active
+  endDate      DateTime?  @map("end_date") // Optional: When the deal expires
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  tenantId     String?    @map("tenant_id") @db.Uuid // Optional: If deals are tenant-specific
+  menuItems    MenuItem[] // Relation to menu items included in this deal
+
+  @@index([isActive])
+  @@index([tenantId])
+  @@index([startDate, endDate])
+  @@index([updatedAt]) // Added index
+  @@map("deal_sections")
+}
+
+// Model for general promotional banners
+model Banner {
+  id           String          @id @default(uuid()) @db.Uuid
+  title        String // e.g., "Fresh Fruits Healthy Products"
+  subtitle     String? // e.g., "30% off sale"
+  imageUrl     String?         @map("image_url") // Added: Image for the banner
+  hurryText    String?         @map("hurry_text") // Optional: e.g., "Hurry up!!!"
+  buttonText   String?         @map("button_text") // e.g., "Shop now"
+  buttonLink   String?         @map("button_link") // e.g., "shop-left-sidebar-col-3.html" or internal link
+  linkType     SliderLinkType? @map("link_type") // Optional: Reuse SliderLinkType for consistency
+  linkTargetId String?         @map("link_target_id") @db.Uuid // Optional: ID of linked entity
+  isActive     Boolean         @default(true) @map("is_active") // Added active status
+  startDate    DateTime?       @map("start_date") // Optional: When the banner becomes active
+  endDate      DateTime?       @map("end_date") // Optional: When the banner expires
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  tenantId     String?         @map("tenant_id") @db.Uuid // Optional: If banners are tenant-specific
+
+  @@index([isActive])
+  @@index([tenantId])
+  @@index([startDate, endDate])
+  @@index([linkType]) // Added index
+  @@index([updatedAt]) // Added index
+  @@map("banners")
+}
+
+// Model for Offer Banners (e.g., "Tasty Snack & Fastfood" type)
+model OfferBanner {
+  id           String          @id @default(uuid()) @db.Uuid
+  discount     String // e.g., "70% Off"
+  image        String // URL or path to the banner image
+  title        String // e.g., "Tasty Snack & Fastfood"
+  subtitle     String // e.g., "The flavor of something special"
+  buttonText   String          @map("button_text") // e.g., "Shop Now"
+  buttonLink   String          @map("button_link") // URL or path for the button link
+  linkType     SliderLinkType? @map("link_type") // Optional: Reuse SliderLinkType for consistency
+  linkTargetId String?         @map("link_target_id") @db.Uuid // Optional: ID of linked entity
+  isActive     Boolean         @default(true) @map("is_active")
+  startDate    DateTime?       @map("start_date") // Optional: When the banner becomes active
+  endDate      DateTime?       @map("end_date") // Optional: When the banner expires
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  tenantId     String?         @map("tenant_id") @db.Uuid // Optional: If banners are tenant-specific
+
+  @@index([isActive])
+  @@index([tenantId])
+  @@index([startDate, endDate])
+  @@index([linkType])
+  @@index([updatedAt])
+  @@map("offer_banners")
+}
+
+// Model for "New Arrivals" sections
+model NewArrivalsSection {
+  id        String     @id @default(uuid()) @db.Uuid
+  title     String // e.g., "New Arrivals"
+  subtitle  String? // e.g., "Shop online for new arrivals and get free shipping!"
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  tenantId  String?    @map("tenant_id") @db.Uuid // Optional: If sections are tenant-specific
+  tabs      Tab[] // Relation to tabs within this section
+  menuItems MenuItem[] @relation("SectionAllItems") // Relation for items shown directly under the section (e.g., "All" tab)
+
+  @@index([isActive])
+  @@index([tenantId])
+  @@index([updatedAt]) // Added index
+  @@map("new_arrivals_sections")
+}
+
+// Model for tabs within the New Arrivals section
+model Tab {
+  id        String             @id @default(uuid()) @db.Uuid
+  name      String // e.g., "All", "Snack & Spices", "Fruits"
+  order     Int                @default(0) // Added display order for tabs
+  sectionId String             @map("section_id") @db.Uuid
+  section   NewArrivalsSection @relation(fields: [sectionId], references: [id])
+  isActive  Boolean            @default(true) @map("is_active") // Added active status
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  tenantId  String?            @map("tenant_id") @db.Uuid // Optional: If tabs are tenant-specific
+  menuItems MenuItem[]         @relation("TabItems") // Relation to items specific to this tab
+
+  @@index([sectionId])
+  @@index([isActive])
+  @@index([tenantId])
+  @@index([order])
+  @@index([name]) // Added index
+  @@map("new_arrivals_tabs")
+}
+
+//-----------------------------------------------------------------------------
+// Offer Section Models
+//-----------------------------------------------------------------------------
+
+model OfferSection {
+  id        String              @id @default(uuid()) @db.Uuid
+  isActive  Boolean             @default(true) @map("is_active")
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  tenantId  String?             @map("tenant_id") @db.Uuid // Optional: If sections are tenant-specific
+  banner    OfferSectionBanner? // Relation to the specific banner for this section
+  sliders   Slider[] // Relation to the sliders within this section
+
+  @@index([isActive])
+  @@index([tenantId])
+  @@index([updatedAt])
+  @@map("offer_sections")
+}
+
+model OfferSectionBanner {
+  id             String       @id @default(uuid()) @db.Uuid
+  title          String // e.g., "Our top most products check it now"
+  buttonText     String       @map("button_text") // e.g., "Shop Now"
+  buttonLink     String       @map("button_link") // e.g., "shop-left-sidebar-col-3.html"
+  offerSectionId String       @unique @map("offer_section_id") @db.Uuid // Foreign key to OfferSection
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  tenantId       String?      @map("tenant_id") @db.Uuid // Optional: If banners are tenant-specific
+  offerSection   OfferSection @relation(fields: [offerSectionId], references: [id])
+
+  @@index([offerSectionId])
+  @@index([isActive])
+  @@index([tenantId])
+  @@index([updatedAt])
+  @@map("offer_section_banners")
+}
+
+model Slider {
+  id             String               @id @default(uuid()) @db.Uuid
+  title          String // e.g., "Trending Items", "Top Rated", "Top Selling"
+  offerSectionId String               @map("offer_section_id") @db.Uuid // Foreign key to OfferSection
+  displayOrder   Int                  @default(0) @map("display_order")
+  isActive       Boolean              @default(true) @map("is_active")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  tenantId       String?              @map("tenant_id") @db.Uuid // Optional: If sliders are tenant-specific
+  offerSection   OfferSection         @relation(fields: [offerSectionId], references: [id])
+  menuItems      MenuItemsOnSliders[] // Relation to the join table for MenuItems
+
+  @@index([offerSectionId])
+  @@index([isActive])
+  @@index([displayOrder])
+  @@index([tenantId])
+  @@index([updatedAt])
+  @@map("sliders")
+}
+
+// Join table for Slider and MenuItem (Many-to-Many)
+model MenuItemsOnSliders {
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  sliderId   String   @map("slider_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  order      Int? // Optional display order within the slider
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  slider   Slider   @relation(fields: [sliderId], references: [id])
+
+  @@id([menuItemId, sliderId])
+  @@index([sliderId])
+  @@index([menuItemId]) // Added index for querying by menu item
+  @@map("menu_items_on_sliders")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\schema\core.prisma
+// file name: core.prisma
+// purpose: Defines core business models like Restaurant, MenuItem, Category, Order, Payment, Delivery, etc.
+
+//-----------------------------------------------------------------------------
+// Core Business Models
+//-----------------------------------------------------------------------------
+// Restaurant Management
+model Restaurant {
+  id                   String      @id @default(uuid()) @db.Uuid
+  name                 String
+  imageUrl             String      @map("image_url")
+  restaurantPageUrl    String?     @unique @map("restaurant_page_url")
+  productCount         Int         @default(0) @map("product_count")
+  salesCount           Int         @default(0) @map("sales_count")
+  phone                String
+  email                String
+  address              String
+  description          String
+  createdAt            DateTime    @default(now()) @map("created_at")
+  menuItems            MenuItem[]
+  ownerId              String      @map("owner_id") @db.Uuid
+  owner                User        @relation("UserRestaurants", fields: [ownerId], references: [id])
+  orders               Order[]
+  isActive             Boolean     @default(true) @map("is_active")
+  timezone             String
+  currency             String      @db.VarChar(3)
+  location             Json        @db.JsonB
+  businessHours        Json        @map("business_hours") @db.JsonB
+  brandId              String?     @map("brand_id") @db.Uuid
+  theme                Json?       @db.JsonB
+  rating               Float       @default(0)
+  ratingCount          Int         @default(0) @map("rating_count")
+  deliveryFeeStructure Json?       @map("delivery_fee_structure") @db.JsonB
+  brand                Brand?      @relation(fields: [brandId], references: [id])
+  taxRates             TaxRate[]
+  menus                Menu[]
+  inventory            Inventory[]
+  // categories           Category[]
+
+  @@index([ownerId])
+  @@index([email])
+  @@index([timezone])
+  @@index([currency])
+  @@index([brandId])
+  @@map("restaurants")
+}
+
+model Brand {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  logoUrl     String       @map("logo_url")
+  description String?
+  websiteUrl  String?      @map("website_url")
+  isActive    Boolean      @default(true) @map("is_active")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  menuItems   MenuItem[]
+  tenantId    String       @map("tenant_id") @db.Uuid
+  restaurants Restaurant[]
+
+  @@index([tenantId])
+  @@map("brands")
+}
+
+model Category {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String     @unique
+  description String?
+  imageUrl    String?    @map("image_url")
+  isActive    Boolean    @default(true) @map("is_active")
+  order       Int        @default(0)
+  parentId    String?    @map("parent_id") @db.Uuid
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+
+  restaurantId       String?    @map("restaurant_id") @db.Uuid
+  // restaurant         Restaurant @relation(fields: [restaurantId], references: [id])
+  menuItems          MenuItem[] // Items belonging to this category
+  discountPercentage Float?     @map("discount_percentage")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  @@index([restaurantId])
+  @@index([parentId])
+  @@index([slug]) // Added index
+  @@index([isActive]) // Added index
+  @@index([order]) // Added index
+  @@map("categories")
+}
+
+model MenuItem {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  title                 String
+  description           String?
+  sku                   String                   @unique
+  finalPrice            Float                    @map("final_price")
+  mrp                   Float
+  discountPercentage    Float                    @map("discount_percentage")
+  stockStatus           InventoryStatus          @default(IN_STOCK) @map("stock_status") // Changed to use InventoryStatus enum
+  rating                Float
+  ratingCount           Int                      @map("rating_count")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
+  images                MenuItemImage[]
+  specifications        MenuItemSpecification[]
+  variants              MenuItemVariant[]
+  reviews               MenuItemReview[]
+  relatedMenuItems      RelatedMenuItem[]        @relation("SourceRelatedItems")
+  restaurant            Restaurant               @relation(fields: [restaurantId], references: [id])
+  restaurantId          String                   @map("restaurant_id") @db.Uuid
+  attributes            MenuItemAttribute[]      @relation("MenuItemAttributes")
+  audits                MenuItemAudit[]          @relation("MenuItemAudits")
+  orderItems            OrderItem[]
+  isActive              Boolean                  @default(true) @map("is_active")
+  categoryId            String                   @map("category_id") @db.Uuid
+  currency              String                   @db.VarChar(3)
+  lastUpdatedBy         String                   @map("last_updated_by") @db.Uuid
+  availabilitySchedule  Json?                    @map("availability_schedule") @db.JsonB
+  tags                  Tag[]                    @relation("MenuItemTags")
+  category              Category                 @relation(fields: [categoryId], references: [id])
+  updatedByUser         User                     @relation("MenuItemUpdates", fields: [lastUpdatedBy], references: [id])
+  prepTime              Int?                     @map("prep_time")
+  isFeatured            Boolean                  @default(false) @map("is_featured")
+  maxOrderQuantity      Int?                     @map("max_order_quantity")
+  minOrderQuantity      Int                      @default(1) @map("min_order_quantity")
+  allergens             Json?                    @db.JsonB
+  nutritionInfo         Json?                    @map("nutrition_info") @db.JsonB
+  tenantId              String                   @map("tenant_id") @db.Uuid
+  deletedAt             DateTime?                @map("deleted_at")
+  menuItemAllergens     MenuItemAllergen[]
+  brandId               String?                  @map("brand_id") @db.Uuid
+  color                 String?
+  weightUnit            WeightUnit
+  isVisible             Boolean                  @default(true) @map("is_visible")
+  searchKeywords        Json?                    @map("search_keywords") @db.JsonB
+  taxRateId             String?                  @map("tax_rate_id") @db.Uuid
+  brand                 Brand?                   @relation(fields: [brandId], references: [id])
+  taxRate               TaxRate?                 @relation(fields: [taxRateId], references: [id])
+  wishlists             Wishlist[]
+  priceHistory          MenuItemPriceHistory[]
+  recommendations       MenuItemRecommendation[] @relation("SourceRecommendations")
+  targetRecommendations MenuItemRecommendation[] @relation("TargetRecommendations")
+  menus                 MenuItemsOnMenus[] // Changed to many-to-many relation
+  sliders               MenuItemsOnSliders[] // Added relation for Offer Section Sliders
+  cartItems             CartItem[]               @relation("CartItem_MenuItem") // Added relation name
+  relatedToItems        RelatedMenuItem[]        @relation("TargetRelatedItems") // Added relation for RelatedMenuItem
+  inventoryItems        Inventory[]              @relation("menuItemRelation") // Added relation name
+
+  // Deal of the Day related fields
+  dietaryLabel  String?      @map("dietary_label")
+  quantityLabel String?      @map("quantity_label")
+  flags         String[]
+  dealSectionId String?      @map("deal_section_id") @db.Uuid
+  dealSection   DealSection? @relation(fields: [dealSectionId], references: [id])
+
+  // New Arrivals related fields
+  newArrivalsSectionId String?             @map("new_arrivals_section_id") @db.Uuid
+  newArrivalsSection   NewArrivalsSection? @relation("SectionAllItems", fields: [newArrivalsSectionId], references: [id])
+  tabId                String?             @map("tab_id") @db.Uuid
+  tab                  Tab?                @relation("TabItems", fields: [tabId], references: [id])
+
+  @@index([restaurantId])
+  @@index([sku])
+  @@index([stockStatus]) // Index on enum field
+  @@index([categoryId])
+  @@index([categoryId, isActive])
+  @@index([rating])
+  @@index([tenantId])
+  @@index([brandId])
+  @@index([color])
+  @@index([isVisible])
+  @@index([isActive]) // Added index
+  @@index([isFeatured]) // Added index
+  @@index([createdAt]) // Added index
+  @@index([updatedAt]) // Added index
+  @@index([dealSectionId])
+  @@index([newArrivalsSectionId])
+  @@index([tabId])
+  @@map("menu_items")
+}
+
+model MenuItemAudit {
+  id         String   @id @default(uuid()) @db.Uuid
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  menuItem   MenuItem @relation("MenuItemAudits", fields: [menuItemId], references: [id])
+
+  @@map("menu_item_audits")
+}
+
+model MenuItemVariant {
+  id           String                 @id @default(uuid()) @db.Uuid
+  menuItemId   String                 @map("menu_item_id") @db.Uuid
+  weight       String // Consider making this more structured (e.g., value + unit)
+  isActive     Boolean                @map("is_active")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  menuItem     MenuItem               @relation(fields: [menuItemId], references: [id])
+  inventory    Inventory[] // Relation to Inventory
+  priceHistory MenuItemPriceHistory[] // Relation to Price History
+  cartItems    CartItem[]             @relation("CartItem_Variant") // Added relation name
+
+  @@index([menuItemId])
+  @@index([isActive]) // Added index
+  @@map("menu_item_variants")
+}
+
+model MenuItemImage {
+  id         String   @id @default(uuid()) @db.Uuid
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  imageUrl   String   @map("image_url")
+  isPrimary  Boolean  @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  altText    String?  @map("alt_text")
+  order      Int      @default(0)
+
+  @@index([menuItemId])
+  @@index([isPrimary]) // Added index
+  @@index([order]) // Added index
+  @@map("menu_item_images")
+}
+
+model MenuItemSpecification {
+  id         String   @id @default(uuid()) @db.Uuid
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  specKey    String   @map("spec_key")
+  specValue  String   @map("spec_value")
+  createdAt  DateTime @default(now()) @map("created_at")
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([menuItemId]) // Added index
+  @@map("menu_item_specifications")
+}
+
+model MenuItemAttribute {
+  id         String   @id @default(uuid()) @db.Uuid
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  key        String
+  value      Json     @db.JsonB
+  language   String?  @db.VarChar(2)
+  menuItem   MenuItem @relation("MenuItemAttributes", fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@index([menuItemId]) // Added index
+  @@map("menu_item_attributes")
+}
+
+model MenuItemPriceHistory {
+  id                 String           @id @default(uuid()) @db.Uuid
+  menuItemId         String           @map("menu_item_id") @db.Uuid
+  variantId          String?          @map("variant_id") @db.Uuid
+  finalPrice         Float            @map("final_price")
+  mrp                Float
+  discountPercentage Float            @map("discount_percentage")
+  effectiveFrom      DateTime         @map("effective_from")
+  effectiveUntil     DateTime?        @map("effective_until")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  menuItem           MenuItem         @relation(fields: [menuItemId], references: [id])
+  variant            MenuItemVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([menuItemId])
+  @@index([variantId]) // Added index
+  @@map("menu_item_price_history")
+}
+
+model MenuItemReview {
+  id           String   @id @default(uuid()) @db.Uuid
+  menuItemId   String   @map("menu_item_id") @db.Uuid
+  userId       String   @map("user_id") @db.Uuid // Link to User model
+  userName     String   @map("user_name") // Keep for display, but link to user
+  userImageUrl String?  @map("user_image_url") // Keep for display, but link to user
+  rating       Float
+  comment      String
+  createdAt    DateTime @default(now()) @map("created_at")
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
+  user         User     @relation(fields: [userId], references: [id]) // Relation to User
+
+  @@index([menuItemId]) // Added index
+  @@index([userId]) // Added index
+  @@map("menu_item_reviews")
+}
+
+model RelatedMenuItem {
+  id            String   @id @default(uuid()) @db.Uuid
+  menuItemId    String   @map("menu_item_id") @db.Uuid // The item this relates TO
+  relatedItemId String   @map("related_item_id") @db.Uuid // The item being recommended/related
+  createdAt     DateTime @default(now()) @map("created_at")
+  menuItem      MenuItem @relation("SourceRelatedItems", fields: [menuItemId], references: [id])
+  relatedItem   MenuItem @relation("TargetRelatedItems", fields: [relatedItemId], references: [id]) // Relation to the actual related MenuItem
+
+  @@unique([menuItemId, relatedItemId]) // Ensure uniqueness
+  @@index([menuItemId]) // Added index
+  @@index([relatedItemId]) // Added index
+  @@map("related_menu_items")
+}
+
+model Tag {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String     @unique
+  description String?
+  type        String
+  menuItems   MenuItem[] @relation("MenuItemTags")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@index([slug])
+  @@index([name]) // Added index
+  @@index([type]) // Added index
+  @@map("tags")
+}
+
+model Menu {
+  id           String             @id @default(uuid()) @db.Uuid
+  restaurantId String             @map("restaurant_id") @db.Uuid
+  name         String
+  description  String?
+  isActive     Boolean            @default(true) @map("is_active")
+  startTime    DateTime?          @map("start_time")
+  endTime      DateTime?          @map("end_time")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+  restaurant   Restaurant         @relation(fields: [restaurantId], references: [id])
+  menuItems    MenuItemsOnMenus[] // Changed to many-to-many relation
+  tenantId     String             @map("tenant_id") @db.Uuid
+
+  @@index([restaurantId])
+  @@index([tenantId])
+  @@index([isActive]) // Added index
+  @@index([name]) // Added index
+  @@map("menus")
+}
+
+// Join table for Menu and MenuItem (Many-to-Many)
+model MenuItemsOnMenus {
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  menuId     String   @map("menu_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  order      Int? // Optional display order within the menu
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  menu     Menu     @relation(fields: [menuId], references: [id])
+
+  @@id([menuItemId, menuId])
+  @@index([menuId]) // Added index
+  @@map("menu_items_on_menus")
+}
+
+// Model for representing recommendations between menu items
+model MenuItemRecommendation {
+  id               String               @id @default(uuid()) @db.Uuid
+  sourceMenuItemId String               @map("source_menu_item_id") @db.Uuid // The item for which the recommendation is shown
+  targetMenuItemId String               @map("target_menu_item_id") @db.Uuid // The item being recommended
+  reason           RecommendationReason @map("reason") // Why this item is recommended
+  score            Float? // Optional score indicating recommendation strength
+  createdAt        DateTime             @default(now()) @map("created_at")
+
+  sourceMenuItem MenuItem @relation("SourceRecommendations", fields: [sourceMenuItemId], references: [id])
+  targetMenuItem MenuItem @relation("TargetRecommendations", fields: [targetMenuItemId], references: [id])
+
+  @@unique([sourceMenuItemId, targetMenuItemId]) // Prevent duplicate recommendations
+  @@index([sourceMenuItemId])
+  @@index([targetMenuItemId])
+  @@index([reason])
+  @@map("menu_item_recommendations")
+}
+
+//-----------------------------------------------------------------------------
+// Order Management
+//-----------------------------------------------------------------------------
+model Order {
+  id                    String               @id @default(uuid()) @db.Uuid
+  userId                String               @map("user_id") @db.Uuid
+  restaurantId          String               @map("restaurant_id") @db.Uuid
+  status                OrderStatus          @default(PENDING)
+  paymentStatus         PaymentStatus        @default(PENDING) @map("payment_status")
+  subtotal              Float
+  tax                   Float
+  deliveryFee           Float                @map("delivery_fee")
+  discount              Float
+  total                 Float
+  notes                 String?
+  deliveryAddress       Json?                @map("delivery_address") @db.JsonB // Consider linking to Address model
+  estimatedDeliveryTime DateTime?            @map("estimated_delivery_time")
+  actualDeliveryTime    DateTime?            @map("actual_delivery_time")
+  cancelReason          String?              @map("cancel_reason")
+  createdAt             DateTime             @default(now()) @map("created_at")
+  updatedAt             DateTime             @updatedAt @map("updated_at")
+  orderType             OrderType            @default(DELIVERY) @map("order_type")
+  deliveryInstructions  String?              @map("delivery_instructions")
+  source                String?
+  priority              PriorityLevel? // Changed String? to PriorityLevel?
+  correlationId         String               @unique @default(uuid()) @map("correlation_id") @db.Uuid // Added unique and default
+  tenantId              String               @map("tenant_id") @db.Uuid
+  delivery              Delivery?
+  feedback              Feedback[]
+  supportTickets        SupportTicket[]
+  payments              Payment[] // Added relation to Payment
+  loyaltyTransactions   LoyaltyTransaction[] // Added relation to LoyaltyTransaction
+
+  // Relations
+  user          User                @relation(fields: [userId], references: [id])
+  restaurant    Restaurant          @relation(fields: [restaurantId], references: [id])
+  items         OrderItem[]
+  audits        OrderAudit[]
+  cancellations OrderCancellation[]
+
+  @@index([userId]) // Added index
+  @@index([restaurantId]) // Added index
+  @@index([status]) // Added index
+  @@index([paymentStatus]) // Added index
+  @@index([orderType])
+  @@index([tenantId])
+  @@index([createdAt]) // Added index for time-based queries
+  @@index([updatedAt]) // Added index
+  @@map("orders")
+}
+
+model OrderItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  orderId    String  @map("order_id") @db.Uuid
+  menuItemId String  @map("menu_item_id") @db.Uuid
+  quantity   Int
+  unitPrice  Float   @map("unit_price") // Price at the time of order
+  subtotal   Float // quantity * unitPrice
+  notes      String?
+
+  // Relations
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId]) // Added index
+  @@index([menuItemId]) // Added index
+  @@map("order_items")
+}
+
+model OrderAudit {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @map("order_id") @db.Uuid
+  operation String // CREATE, UPDATE, STATUS_CHANGE, etc.
+  changedBy String   @map("changed_by") @db.Uuid // Link to User ID
+  changes   Json     @db.JsonB
+  timestamp DateTime @default(now())
+
+  // Relations
+  order   Order @relation(fields: [orderId], references: [id])
+  changer User  @relation(fields: [changedBy], references: [id]) // Relation to User
+
+  @@index([orderId]) // Added index
+  @@index([changedBy]) // Added index
+  @@index([timestamp]) // Added index
+  @@map("order_audits")
+}
+
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  orderId         String        @map("order_id") @db.Uuid
+  amount          Float
+  currency        String        @db.VarChar(3)
+  method          PaymentMethod
+  status          PaymentStatus
+  transactionId   String?       @unique @map("transaction_id") // Added unique constraint
+  gatewayResponse Json?         @map("gateway_response") @db.JsonB
+  refundStatus    ReturnStatus? @map("refund_status") // Changed String? to ReturnStatus?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  order           Order         @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([status]) // Added index
+  @@index([method]) // Added index
+  @@index([transactionId])
+  @@index([createdAt]) // Added index
+  @@map("payments")
+}
+
+model Delivery {
+  id          String         @id @default(uuid()) @db.Uuid
+  orderId     String         @unique @map("order_id") @db.Uuid
+  driverId    String?        @map("driver_id") @db.Uuid // Made optional, might not be assigned immediately
+  status      DeliveryStatus
+  trackingUrl String?        @map("tracking_url")
+  assignedAt  DateTime?      @map("assigned_at") // Made optional
+  pickedUpAt  DateTime?      @map("picked_up_at") // Added pickup time
+  completedAt DateTime?      @map("completed_at")
+  order       Order          @relation(fields: [orderId], references: [id])
+  driver      Driver?        @relation(fields: [driverId], references: [id]) // Made optional
+  tenantId    String         @map("tenant_id") @db.Uuid
+  createdAt   DateTime       @default(now()) @map("created_at") // Added createdAt
+
+  @@index([driverId]) // Added index
+  @@index([status])
+  @@index([tenantId])
+  @@index([createdAt]) // Added index
+  @@map("deliveries")
+}
+
+model Driver {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @unique @map("user_id") @db.Uuid
+  vehicleInfo Json?      @map("vehicle_info") @db.JsonB
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deliveries  Delivery[]
+  tenantId    String     @map("tenant_id") @db.Uuid
+  user        User       @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@index([userId]) // Added index
+  @@map("drivers")
+}
+
+model OrderCancellation {
+  id          String                  @id @default(uuid()) @db.Uuid
+  orderId     String                  @map("order_id") @db.Uuid
+  reason      String
+  requestedBy String                  @map("requested_by") @db.Uuid
+  approvedBy  String?                 @map("approved_by") @db.Uuid
+  status      OrderCancellationStatus @default(REQUESTED) @map("status") // Changed to use enum
+  createdAt   DateTime                @default(now()) @map("created_at")
+  order       Order                   @relation(fields: [orderId], references: [id])
+  requester   User                    @relation("CancellationRequests", fields: [requestedBy], references: [id])
+  approver    User?                   @relation("CancellationApprovals", fields: [approvedBy], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+  @@index([requestedBy])
+  @@map("order_cancellations")
+}
+
+//-----------------------------------------------------------------------------
+// Product Features (Moved from separate section)
+//-----------------------------------------------------------------------------
+model Allergen {
+  id          String             @id @default(uuid()) @db.Uuid
+  name        String             @unique
+  description String?
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  menuItems   MenuItemAllergen[]
+  tenantId    String             @map("tenant_id") @db.Uuid
+
+  @@index([tenantId])
+  @@index([name]) // Added index
+  @@map("allergens")
+}
+
+model MenuItemAllergen {
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  allergenId String   @map("allergen_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  allergen   Allergen @relation(fields: [allergenId], references: [id])
+
+  @@id([menuItemId, allergenId])
+  @@index([allergenId]) // Added index
+  @@map("menu_item_allergens")
+}
+
+model TaxRate {
+  id            String      @id @default(uuid()) @db.Uuid
+  name          String
+  rate          Float // Percentage (e.g., 0.05 for 5%)
+  region        String? // e.g., State, Country, City
+  effectiveFrom DateTime    @map("effective_from")
+  isActive      Boolean     @default(true) @map("is_active")
+  restaurantId  String?     @map("restaurant_id") @db.Uuid // Can be null for global/regional rates
+  tenantId      String      @map("tenant_id") @db.Uuid // Added tenant ID
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  menuItems     MenuItem[]
+  restaurant    Restaurant? @relation(fields: [restaurantId], references: [id])
+
+  @@index([restaurantId])
+  @@index([tenantId]) // Added index
+  @@index([isActive]) // Added index
+  @@index([name]) // Added index
+  @@map("tax_rates")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\schema\enums.prisma
+// file name: enums.prisma
+// purpose: Defines various enumerations used across different models in the schema.
+
+//-----------------------------------------------------------------------------
+// Core Business Enums
+//-----------------------------------------------------------------------------
+
+/// Status of an order throughout its lifecycle.
+enum OrderStatus {
+  PENDING // Order placed, awaiting processing.
+  PREPARING // Order accepted, being prepared.
+  SHIPPED // Order handed over for delivery (if applicable).
+  DELIVERED // Order successfully delivered/picked up.
+  CANCELLED // Order cancelled by user or system.
+  REFUNDED // Order amount refunded.
+
+  @@map("order_status")
+}
+
+/// Status of a payment associated with an order.
+enum PaymentStatus {
+  PENDING // Payment initiated, awaiting confirmation.
+  AUTHORIZED // Payment authorized but not yet captured.
+  PAID // Payment successfully completed.
+  FAILED // Payment attempt failed.
+  REFUNDED // Full payment amount refunded.
+  PARTIALLY_REFUNDED // Partial payment amount refunded.
+
+  @@map("payment_status")
+}
+
+/// Type of order fulfillment.
+enum OrderType {
+  DELIVERY // Order to be delivered to customer address.
+  PICKUP // Order to be picked up by customer at the restaurant.
+  DINE_IN // Order placed for dining within the restaurant.
+
+  @@map("order_type")
+}
+
+/// Status of the delivery process for an order.
+enum DeliveryStatus {
+  PENDING // Delivery not yet assigned or started.
+  ASSIGNED // Delivery assigned to a driver.
+  IN_TRANSIT // Driver has picked up the order and is en route.
+  DELIVERED // Delivery successfully completed.
+  FAILED // Delivery attempt failed.
+
+  @@map("delivery_status")
+}
+
+/// Method used for payment.
+enum PaymentMethod {
+  CREDIT_CARD // Payment via credit card.
+  DEBIT_CARD // Payment via debit card.
+  PAYPAL // Payment via PayPal.
+  STRIPE // Payment via Stripe.
+  CASH // Payment with cash (typically for pickup/dine-in).
+  BANK_TRANSFER // Payment via direct bank transfer.
+
+  @@map("payment_method")
+}
+
+/// Status of a return or refund request.
+enum ReturnStatus {
+  NONE // No return requested.
+  REQUESTED // Return/refund has been requested by the customer.
+  APPROVED // Return/refund request approved.
+  REJECTED // Return/refund request rejected.
+  COMPLETED // Return/refund process completed (e.g., item returned, refund issued).
+
+  @@map("return_status")
+}
+
+/// Priority level, often used for orders or support tickets.
+enum PriorityLevel {
+  LOW // Low priority.
+  NORMAL // Normal priority.
+  HIGH // High priority.
+  URGENT // Urgent priority.
+
+  @@map("priority_level")
+}
+
+//-----------------------------------------------------------------------------
+// User & Account Enums
+//-----------------------------------------------------------------------------
+
+/// Role assigned to a user within the system.
+enum UserRole {
+  CUSTOMER
+  RESTAURANT_OWNER
+  RESTAURANT_STAFF
+  ADMIN
+  SUPER_ADMIN
+
+  @@map("user_role")
+}
+
+/// Status of a user's account.
+enum AccountStatus {
+  ACTIVE // Account is active and usable.
+  SUSPENDED // Account access temporarily revoked.
+  PENDING_VERIFICATION // Account created, awaiting verification (e.g., email).
+  // DEACTIVATED // Consider adding if users can deactivate accounts.
+
+  @@map("account_status")
+}
+
+//-----------------------------------------------------------------------------
+// Feature Specific Enums
+//-----------------------------------------------------------------------------
+
+/// Type of feedback provided.
+enum FeedbackType {
+  RESTAURANT // Feedback about a specific restaurant.
+  DELIVERY // Feedback about the delivery experience.
+  MENU_ITEM // Feedback about a specific menu item.
+  SERVICE // General feedback about the platform or service.
+
+  @@map("feedback_type")
+}
+
+/// Channel through which a notification is sent.
+enum NotificationChannel {
+  EMAIL // Notification sent via email.
+  SMS // Notification sent via SMS text message.
+  PUSH // Notification sent via mobile push notification.
+  IN_APP // Notification displayed within the application interface.
+
+  @@map("notification_channel")
+}
+
+/// Type or category of a notification.
+enum NotificationType {
+  ORDER_STATUS // Updates about order progress.
+  PROMOTION // Promotional messages or offers.
+  PASSWORD_RESET // Notifications related to password reset requests.
+  ACCOUNT_UPDATE // Notifications about changes to the user's account.
+  NEW_MESSAGE // Notification about a new message (e.g., support chat).
+  SYSTEM_ALERT // Important system-wide alerts.
+
+  @@map("notification_type")
+}
+
+/// Type of promotional activity.
+enum PromotionType {
+  BANNER // Promotion displayed as a banner ad.
+  EMAIL // Promotion sent via email campaign.
+  DISCOUNT // General discount offer (e.g., coupon code).
+  SOCIAL // Promotion run on social media platforms.
+
+  @@map("promotion_type")
+}
+
+/// Unit of measurement for weight.
+enum WeightUnit {
+  GRAM // Grams.
+  KILOGRAM // Kilograms.
+  OUNCE // Ounces.
+  POUND // Pounds.
+
+  @@map("weight_unit")
+}
+
+/// Status of inventory for a menu item or variant.
+enum InventoryStatus {
+  IN_STOCK // Item is available in sufficient quantity.
+  LOW_STOCK // Item quantity is low, may need restocking soon.
+  OUT_OF_STOCK // Item is currently unavailable.
+  DISCONTINUED // Item is no longer offered.
+
+  @@map("inventory_status")
+}
+
+/// Reason why an item is recommended.
+enum RecommendationReason {
+  POPULAR // Item is generally popular.
+  FREQUENTLY_BOUGHT_TOGETHER // Item often purchased with others in the cart.
+  AI_SUGGESTED // Recommendation generated by an AI algorithm.
+  MANUAL // Manually curated recommendation.
+
+  @@map("recommendation_reason")
+}
+
+/// Type of transaction affecting loyalty points.
+enum LoyaltyTransactionType {
+  EARNED // Points earned from a purchase or action.
+  REDEEMED // Points redeemed for a reward.
+  EXPIRED // Points expired due to inactivity or time limit.
+  ADJUSTED // Manual adjustment of points balance (e.g., correction, bonus).
+
+  @@map("loyalty_transaction_type")
+}
+
+/// Status of an order cancellation request.
+enum OrderCancellationStatus {
+  REQUESTED // Cancellation has been requested.
+  APPROVED // Cancellation request approved.
+  REJECTED // Cancellation request rejected.
+
+  @@map("order_cancellation_status")
+}
+
+/// Type of link target for a slider item.
+enum SliderLinkType {
+  RESTAURANT // Links to a specific restaurant page.
+  MENU_ITEM // Links to a specific menu item details page.
+  CATEGORY // Links to a specific category page.
+  CAMPAIGN // Links to a promotional campaign page.
+  EXTERNAL_URL // Links to an external website.
+  NONE // Slider item is not clickable or has no link.
+
+  @@map("slider_link_type")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\inventory.prisma
+// file name: inventory.prisma
+// purpose: Defines models for inventory management, including Inventory tracking and Supplier information.
+
+//-----------------------------------------------------------------------------
+// Inventory Management
+//-----------------------------------------------------------------------------
+model Inventory {
+  id               String          @id @default(uuid()) @db.Uuid
+  menuItemId       String          @map("menu_item_id") @db.Uuid
+  variantId        String?         @map("variant_id") @db.Uuid // Link to specific variant if applicable
+  quantity         Int
+  reorderThreshold Int             @map("reorder_threshold")
+  status           InventoryStatus @default(IN_STOCK)
+  lastUpdated      DateTime        @updatedAt @map("last_updated")
+  supplierId       String?         @map("supplier_id") @db.Uuid
+  restaurantId     String          @map("restaurant_id") @db.Uuid
+  tenantId         String          @map("tenant_id") @db.Uuid
+  location         String? // e.g., Shelf A, Fridge 2
+
+  menuItem   MenuItem         @relation(fields: [menuItemId], references: [id], name: "menuItemRelation")
+  variant    MenuItemVariant? @relation(fields: [variantId], references: [id])
+  supplier   Supplier?        @relation(fields: [supplierId], references: [id])
+  restaurant Restaurant       @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, menuItemId, variantId]) // Ensure unique inventory entry per item/variant per restaurant
+  @@index([menuItemId])
+  @@index([variantId]) // Added index
+  @@index([status])
+  @@index([tenantId])
+  @@index([restaurantId]) // Added index
+  @@index([quantity]) // Added index for stock level checks
+  @@index([supplierId]) // Added index
+  @@map("inventory")
+}
+
+model Supplier {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String
+  email     String      @unique // Added unique constraint
+  phone     String?
+  address   Json?       @db.JsonB // Consider making this a structured relation to an Address model if needed elsewhere
+  isActive  Boolean     @default(true) @map("is_active")
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  inventory Inventory[]
+  tenantId  String      @map("tenant_id") @db.Uuid
+
+  @@index([tenantId])
+  @@index([isActive]) // Added index
+  @@map("suppliers")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\loyalty.prisma
+// file name: loyalty.prisma
+// purpose: Defines models for the customer loyalty program and related transactions.
+
+//-----------------------------------------------------------------------------
+// Loyalty & Promotions
+//-----------------------------------------------------------------------------
+model LoyaltyProgram {
+  id              String               @id @default(uuid()) @db.Uuid
+  name            String
+  description     String? // Added description
+  pointsPerDollar Float                @map("points_per_dollar")
+  rewardThreshold Int                  @map("reward_threshold") // Points needed for a reward
+  rewardType      String               @map("reward_type") // e.g., DISCOUNT_PERCENT, FIXED_AMOUNT, FREE_ITEM
+  rewardValue     Float?               @map("reward_value") // Value associated with the reward type
+  isActive        Boolean              @default(true) @map("is_active")
+  validFrom       DateTime?            @map("valid_from") // Added validity period
+  validUntil      DateTime?            @map("valid_until") // Added validity period
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  transactions    LoyaltyTransaction[]
+  tenantId        String               @map("tenant_id") @db.Uuid
+
+  @@index([tenantId])
+  @@index([isActive]) // Added index
+  @@index([name]) // Added index
+  @@map("loyalty_programs")
+}
+
+model LoyaltyTransaction {
+  id              String                 @id @default(uuid()) @db.Uuid
+  userId          String                 @map("user_id") @db.Uuid
+  orderId         String?                @map("order_id") @db.Uuid // Optional link to order
+  programId       String                 @map("program_id") @db.Uuid
+  pointsChange    Int                    @map("points_change") // Positive for earned/adjusted, negative for redeemed/expired
+  // Removed pointsEarned and pointsRedeemed, use pointsChange instead
+  transactionType LoyaltyTransactionType
+  description     String? // Optional description (e.g., "Points expired", "Redeemed for $5 off")
+  createdAt       DateTime               @default(now())
+
+  user    User           @relation(fields: [userId], references: [id])
+  order   Order?         @relation(fields: [orderId], references: [id])
+  program LoyaltyProgram @relation(fields: [programId], references: [id])
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([programId]) // Added index
+  @@index([transactionType]) // Added index
+  @@map("loyalty_transactions")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\notifications.prisma
+// file name: notifications.prisma
+// purpose: Defines models for the notification system and user feedback.
+
+//-----------------------------------------------------------------------------
+// Notification System
+//-----------------------------------------------------------------------------
+model Notification {
+  id        String              @id @default(uuid()) @db.Uuid
+  userId    String              @map("user_id") @db.Uuid
+  type      NotificationType // Changed from String to NotificationType enum
+  channel   NotificationChannel @map("channel") // Use the enum
+  title     String
+  message   String
+  isRead    Boolean             @default(false) @map("is_read")
+  readAt    DateTime?           @map("read_at") // Added timestamp for when it was read
+  metadata  Json?               @db.JsonB // e.g., { "orderId": "...", "promotionCode": "..." }
+  createdAt DateTime            @default(now()) @map("created_at")
+  user      User                @relation(fields: [userId], references: [id])
+  tenantId  String              @map("tenant_id") @db.Uuid // Added tenant ID
+
+  @@index([userId])
+  @@index([type])
+  @@index([channel]) // Added index
+  @@index([isRead]) // Added index
+  @@index([createdAt]) // Added index
+  @@index([tenantId]) // Added index
+  @@map("notifications")
+}
+
+model Feedback {
+  id        String       @id @default(uuid()) @db.Uuid
+  orderId   String       @map("order_id") @db.Uuid
+  userId    String       @map("user_id") @db.Uuid // Added user relation
+  type      FeedbackType // Use the enum
+  comment   String? // Made optional
+  rating    Int // Changed from Float to Int (assuming whole stars)
+  createdAt DateTime     @default(now()) @map("created_at")
+  order     Order        @relation(fields: [orderId], references: [id])
+  user      User         @relation(fields: [userId], references: [id], name: "FeedbackUser") // Relation to User
+  tenantId  String       @map("tenant_id") @db.Uuid // Added tenant ID
+
+  @@index([orderId]) // Added index
+  @@index([userId]) // Added index
+  @@index([type]) // Added index
+  @@index([rating]) // Added index
+  @@index([createdAt]) // Added index
+  @@index([tenantId]) // Added index for tenantId
+  @@map("feedbacks")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+// previewFeatures = ["prismaSchemaFolder"]
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\security.prisma
+// file name: security.prisma
+// purpose: Defines models related to security, access control (roles/permissions), and user sessions.
+
+//-----------------------------------------------------------------------------
+// Security & Access Control
+//-----------------------------------------------------------------------------
+model Permission {
+  id              String           @id @default(uuid()) @db.Uuid
+  name            String           @unique // e.g., "manage:orders", "view:users"
+  description     String?
+  category        String // e.g., "Order Management", "User Management"
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  rolePermissions RolePermission[] // Renamed from 'roles' for clarity
+
+  @@index([category])
+  @@map("permissions")
+}
+
+model RolePermission {
+  role         UserRole // Use the existing UserRole enum
+  permissionId String     @map("permission_id") @db.Uuid
+  grantedAt    DateTime   @default(now()) @map("granted_at")
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  // No need for a separate Role model if UserRole enum suffices
+
+  @@id([role, permissionId])
+  @@index([permissionId])
+  @@index([role]) // Added index
+  @@map("role_permissions")
+}
+
+model Session {
+  id              String           @id @default(uuid()) @db.Uuid
+  userId          String           @map("user_id") @db.Uuid
+  token           String           @unique // The primary session token (e.g., JWT ID)
+  refreshToken    String?          @unique @map("refresh_token") // Optional refresh token
+  ipAddress       String?          @map("ip_address") // Made optional
+  deviceInfo      Json?            @map("device_info") @db.JsonB // Made optional
+  expiresAt       DateTime         @map("expires_at")
+  revokedAt       DateTime?        @map("revoked_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  user            User             @relation(fields: [userId], references: [id])
+  analyticsEvents AnalyticsEvent[] // Relation to Analytics Events
+  searchQueries   SearchQuery[] // Relation to Search Queries
+
+  @@index([userId])
+  @@index([token])
+  @@index([refreshToken]) // Added index
+  @@index([expiresAt]) // Added index for cleanup tasks
+  @@map("sessions")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\support.prisma
+// file name: support.prisma
+// purpose: Defines models for the customer support ticketing system and responses.
+
+//-----------------------------------------------------------------------------
+// Support & Customer Service
+//-----------------------------------------------------------------------------
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  WAITING_FOR_CUSTOMER
+  WAITING_FOR_SUPPORT
+
+  @@map("support_ticket_status")
+}
+
+model SupportTicket {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid // User who created the ticket
+  orderId     String?             @map("order_id") @db.Uuid // Optional link to a specific order
+  subject     String
+  description String
+  status      SupportTicketStatus @default(OPEN) // Use the enum
+  priority    PriorityLevel       @default(NORMAL) // Use the enum
+  assignedTo  String?             @map("assigned_to") @db.Uuid // User ID of the support agent
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  resolvedAt  DateTime?           @map("resolved_at") // Added resolved timestamp
+  closedAt    DateTime?           @map("closed_at") // Added closed timestamp
+  tenantId    String              @map("tenant_id") @db.Uuid // Added tenant ID
+
+  user      User              @relation("UserTickets", fields: [userId], references: [id])
+  order     Order?            @relation(fields: [orderId], references: [id])
+  assignee  User?             @relation("SupportAssignments", fields: [assignedTo], references: [id]) // Relation to assignee
+  responses SupportResponse[]
+
+  @@index([userId])
+  @@index([orderId]) // Added index
+  @@index([status])
+  @@index([priority]) // Added index
+  @@index([assignedTo]) // Added index
+  @@index([tenantId]) // Added index
+  @@index([createdAt]) // Added index
+  @@index([updatedAt]) // Added index
+  @@map("support_tickets")
+}
+
+model SupportResponse {
+  id          String        @id @default(uuid()) @db.Uuid
+  ticketId    String        @map("ticket_id") @db.Uuid
+  responderId String        @map("responder_id") @db.Uuid // User ID of the responder (customer or agent)
+  message     String
+  isInternal  Boolean       @default(false) @map("is_internal") // Flag for internal notes vs customer replies
+  attachments Json?         @db.JsonB // Store attachment metadata (e.g., URLs, filenames)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id])
+  responder   User          @relation("UserResponses", fields: [responderId], references: [id])
+
+  @@index([ticketId])
+  @@index([responderId]) // Added index
+  @@index([createdAt]) // Added index
+  @@map("support_responses")
+}
+
+// file path: restaurant-ecommerce-hub\backend\prisma\user.prisma
+// file name: user.prisma
+// purpose: Defines models related to user management, including User, Address, Wishlist, and UserAudit.
+
+//-----------------------------------------------------------------------------
+// User Management
+//-----------------------------------------------------------------------------
+model User {
+  id             String        @id @default(uuid()) @db.Uuid
+  email          String        @unique
+  passwordHash   String        @map("password_hash")
+  role           UserRole
+  firstName      String?       @map("first_name")
+  lastName       String?       @map("last_name")
+  phoneNumber    String?       @unique @map("phone_number") // Added unique constraint
+  lastLoginAt    DateTime?     @map("last_login_at")
+  accountStatus  AccountStatus @default(PENDING_VERIFICATION) @map("account_status")
+  privacyConsent Boolean       @default(false) @map("privacy_consent")
+  consentGivenAt DateTime?     @map("consent_given_at")
+  sessions       Session[]
+  addresses      Address[] // Relation to Address model
+
+  notifications          Notification[]
+  language               String?              @db.VarChar(2)
+  timezone               String?
+  twoFactorEnabled       Boolean              @default(false) @map("two_factor_enabled")
+  twoFactorSecret        String?              @map("two_factor_secret")
+  failedLoginAttempts    Int                  @default(0) @map("failed_login_attempts")
+  isActive               Boolean              @default(true) @map("is_active")
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedAt              DateTime             @updatedAt @map("updated_at")
+  attributes             Json?                @db.JsonB // For custom user attributes
+  audits                 UserAudit[]          @relation("UserAudits")
+  ownedRestaurants       Restaurant[]         @relation("UserRestaurants")
+  orders                 Order[]
+  wishlists              Wishlist[]
+  defaultCurrency        String?              @map("default_currency") @db.VarChar(3)
+  lastActivityAt         DateTime?            @map("last_activity_at")
+  loyaltyPoints          Int                  @default(0) @map("loyalty_points") // Consider moving to a dedicated LoyaltyUser model if complex
+  loyaltyTransactions    LoyaltyTransaction[] // Relation to Loyalty Transactions
+  cancellationRequests   OrderCancellation[]  @relation("CancellationRequests")
+  cancellationApprovals  OrderCancellation[]  @relation("CancellationApprovals")
+  analyticsEvents        AnalyticsEvent[]
+  searchQueries          SearchQuery[]
+  supportTickets         SupportTicket[]      @relation("UserTickets") // Added relation name
+  supportResponses       SupportResponse[]    @relation("UserResponses") // Added relation name
+  menuItemUpdates        MenuItem[]           @relation("MenuItemUpdates") // Relation for lastUpdatedBy in MenuItem
+  menuItemReviews        MenuItemReview[] // Relation for reviews by user
+  blogComments           BlogComment[]        @relation("UserBlogComments") // Comments written by the user
+  auditChanges           UserAudit[]          @relation("AuditChangers") // Audits performed by this user
+  feedback               Feedback[]           @relation("FeedbackUser") // Added relation name
+  assignedSupportTickets SupportTicket[]      @relation("SupportAssignments") // Added relation for SupportTicket assignee
+
+  orderAudits OrderAudit[] // Relation for order changes by user
+  drivers     Driver[] // Relation if user can be a driver
+  blogPosts   BlogPost[]   @relation("UserBlogPosts") // Posts authored by the user
+  cart        Cart? // Relation to the user's shopping cart
+
+  @@index([role]) // Added index
+  @@index([accountStatus]) // Added index
+  @@index([createdAt]) // Added index
+  @@index([email]) // Added index
+  @@index([phoneNumber]) // Added index
+  @@index([isActive]) // Added index
+  @@index([updatedAt]) // Added index
+  @@map("users")
+}
+
+model UserAudit {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  operation String // e.g., 'CREATE', 'UPDATE', 'LOGIN', 'PASSWORD_RESET'
+  changedBy String?  @map("changed_by") @db.Uuid // User who performed the action (e.g., admin)
+  changes   Json?    @db.JsonB // Details of the changes made
+  ipAddress String?  @map("ip_address") // Added IP address
+  userAgent String?  @map("user_agent") // Added user agent
+  timestamp DateTime @default(now())
+  user      User     @relation("UserAudits", fields: [userId], references: [id])
+  changer   User?    @relation("AuditChangers", fields: [changedBy], references: [id]) // Relation to the user who made the change
+
+  @@index([userId]) // Added index
+  @@index([operation]) // Added index
+  @@index([timestamp]) // Added index
+  @@map("user_audits")
+}
+
+model Address {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  label      String? // e.g., "Home", "Work"
+  street     String
+  city       String
+  state      String
+  postalCode String   @map("postal_code")
+  country    String
+  isDefault  Boolean  @default(false) @map("is_default")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  user       User     @relation(fields: [userId], references: [id])
+  tenantId   String   @map("tenant_id") @db.Uuid // Assuming addresses might be tenant-specific
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([isDefault]) // Added index
+  @@map("addresses")
+}
+
+model Wishlist {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  menuItemId String   @map("menu_item_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User     @relation(fields: [userId], references: [id])
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@unique([userId, menuItemId])
+  @@index([userId])
+  @@index([menuItemId]) // Added index
+  @@map("wishlists")
+}

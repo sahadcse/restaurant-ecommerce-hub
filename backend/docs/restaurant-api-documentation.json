@@ -1,0 +1,1200 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Restaurant Domain API - Restaurant E-commerce Hub",
+    "description": "API documentation specifically for the Restaurant domain, including Restaurants, Menus, Menu Items, and Categories.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@restaurant-hub.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api",
+      "description": "Local Development Server"
+    },
+    {
+      "url": "https://api.restaurant-hub.com",
+      "description": "Production Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Restaurant",
+      "description": "Restaurant management operations"
+    },
+    {
+      "name": "Menu",
+      "description": "Menu management operations for restaurants"
+    },
+    {
+      "name": "Menu Item",
+      "description": "Menu item management operations"
+    },
+    {
+      "name": "Category",
+      "description": "Category management for menu items"
+    },
+    {
+      "name": "Brand",
+      "description": "Brand management operations"
+    },
+    {
+      "name": "TaxRate",
+      "description": "Tax rate management operations"
+    },
+    {
+      "name": "Allergen",
+      "description": "Allergen management operations"
+    }
+  ],
+  "paths": {
+    "/restaurants": {
+      "get": {
+        "tags": ["Restaurant"],
+        "summary": "Get all restaurants",
+        "description": "Retrieve a paginated list of all restaurants with optional filtering.",
+        "operationId": "getAllRestaurants",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 },
+            "description": "Number of items per page"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Search term to filter restaurants by name, description, or address"
+          },
+          {
+            "name": "isActive",
+            "in": "query",
+            "schema": { "type": "boolean" },
+            "description": "Filter by active status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restaurants retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Restaurant" }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "integer" },
+                        "page": { "type": "integer" },
+                        "limit": { "type": "integer" },
+                        "pages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "post": {
+        "tags": ["Restaurant"],
+        "summary": "Create a new restaurant",
+        "description": "Add business details for a restaurant. Requires RESTAURANT_OWNER, ADMIN, or SUPER_ADMIN role.",
+        "operationId": "createRestaurant",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "description": "Restaurant business information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RestaurantCreate" },
+              "example": {
+                "name": "The Gourmet Place",
+                "imageUrl": "https://example.com/image.jpg",
+                "phone": "+1234567890",
+                "email": "contact@gourmetplace.com",
+                "address": "123 Foodie Lane, Flavor Town",
+                "description": "Exquisite dining experience.",
+                "timezone": "America/New_York",
+                "currency": "USD",
+                "location": { "latitude": 40.7128, "longitude": -74.0060 },
+                "businessHours": {
+                  "monday": {"isOpen": true, "openTime": "10:00", "closeTime": "22:00"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Restaurant created successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Restaurant" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/{id}": {
+      "get": {
+        "tags": ["Restaurant"],
+        "summary": "Get restaurant by ID",
+        "description": "Retrieve detailed information for a specific restaurant.",
+        "operationId": "getRestaurantById",
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restaurant retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Restaurant" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "put": {
+        "tags": ["Restaurant"],
+        "summary": "Update a restaurant",
+        "description": "Update details for an existing restaurant. Requires RESTAURANT_OWNER (of this restaurant), ADMIN, or SUPER_ADMIN role.",
+        "operationId": "updateRestaurant",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" }
+        ],
+        "requestBody": {
+          "description": "Updated restaurant information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RestaurantUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Restaurant updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Restaurant" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["Restaurant"],
+        "summary": "Delete a restaurant",
+        "description": "Soft delete a restaurant (sets isActive to false). Requires RESTAURANT_OWNER (of this restaurant), ADMIN, or SUPER_ADMIN role.",
+        "operationId": "deleteRestaurant",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" }
+        ],
+        "responses": {
+          "204": { "description": "Restaurant deleted successfully (no content)" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/{restaurantId}/menus": {
+      "get": {
+        "tags": ["Menu"],
+        "summary": "Get all menus for a restaurant",
+        "description": "Retrieve all active menus for a specific restaurant.",
+        "operationId": "getRestaurantMenus",
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menus retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Menu" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "post": {
+        "tags": ["Menu"],
+        "summary": "Create a new menu",
+        "description": "Create a new menu for a specific restaurant. Requires RESTAURANT_OWNER, ADMIN, or SUPER_ADMIN role.",
+        "operationId": "createMenu",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" }
+        ],
+        "requestBody": {
+          "description": "Menu information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MenuCreate" },
+              "example": {
+                "name": "Lunch Menu",
+                "description": "Available from 11 AM to 3 PM",
+                "isActive": true,
+                "startTime": "2024-01-01T11:00:00Z",
+                "endTime": "2024-01-01T15:00:00Z"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Menu created successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Menu" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/{restaurantId}/menus/{menuId}": {
+      "get": {
+        "tags": ["Menu"],
+        "summary": "Get menu by ID",
+        "description": "Retrieve detailed information for a specific menu.",
+        "operationId": "getMenuById",
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" },
+          { "$ref": "#/components/parameters/MenuIdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Menu" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "put": {
+        "tags": ["Menu"],
+        "summary": "Update a menu",
+        "description": "Update details for an existing menu. Requires RESTAURANT_OWNER, ADMIN, or SUPER_ADMIN role.",
+        "operationId": "updateMenu",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" },
+          { "$ref": "#/components/parameters/MenuIdPath" }
+        ],
+        "requestBody": {
+          "description": "Updated menu information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MenuUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Menu updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Menu" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["Menu"],
+        "summary": "Delete a menu",
+        "description": "Soft delete a menu (sets isActive to false). Requires RESTAURANT_OWNER, ADMIN, or SUPER_ADMIN role.",
+        "operationId": "deleteMenu",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" },
+          { "$ref": "#/components/parameters/MenuIdPath" }
+        ],
+        "responses": {
+          "204": { "description": "Menu deleted successfully (no content)" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/menu-items": {
+      "get": {
+        "tags": ["Menu Item"],
+        "summary": "Get all menu items",
+        "description": "Retrieve a paginated list of all menu items with optional filtering.",
+        "operationId": "getAllMenuItems",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 },
+            "description": "Number of items per page"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Filter by category ID"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Search term to filter menu items"
+          },
+          {
+            "name": "isActive",
+            "in": "query",
+            "schema": { "type": "boolean" },
+            "description": "Filter by active status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu items retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/MenuItem" }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": { "type": "integer" },
+                        "page": { "type": "integer" },
+                        "limit": { "type": "integer" },
+                        "pages": { "type": "integer" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/{restaurantId}/menu-items": {
+      "post": {
+        "tags": ["Menu Item"],
+        "summary": "Create a new menu item",
+        "description": "Create a new menu item for a specific restaurant. Requires RESTAURANT_OWNER, RESTAURANT_STAFF, ADMIN, or SUPER_ADMIN role.",
+        "operationId": "createMenuItem",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/RestaurantIdPath" }
+        ],
+        "requestBody": {
+          "description": "Menu item information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MenuItemCreate" },
+              "example": {
+                "title": "Classic Burger",
+                "description": "Juicy beef patty with fresh veggies.",
+                "sku": "BURGER001",
+                "finalPrice": 9.99,
+                "mrp": 12.00,
+                "categoryId": "uuid-category-burgers",
+                "currency": "USD",
+                "weightUnit": "GRAM",
+                "images": [{"imageUrl": "https://example.com/burger.jpg", "isPrimary": true}]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Menu item created successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MenuItem" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/menu-items/{id}": {
+      "get": {
+        "tags": ["Menu Item"],
+        "summary": "Get menu item by ID",
+        "description": "Retrieve detailed information for a specific menu item.",
+        "operationId": "getMenuItemById",
+        "parameters": [
+          { "$ref": "#/components/parameters/MenuItemIdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Menu item retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MenuItem" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "put": {
+        "tags": ["Menu Item"],
+        "summary": "Update a menu item",
+        "description": "Update details for an existing menu item. Requires RESTAURANT_OWNER, RESTAURANT_STAFF, ADMIN, or SUPER_ADMIN role.",
+        "operationId": "updateMenuItem",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/MenuItemIdPath" }
+        ],
+        "requestBody": {
+          "description": "Updated menu item information",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/MenuItemUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Menu item updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MenuItem" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "delete": {
+        "tags": ["Menu Item"],
+        "summary": "Delete a menu item",
+        "description": "Soft delete a menu item (sets isActive and isVisible to false, sets deletedAt). Requires RESTAURANT_OWNER, RESTAURANT_STAFF, ADMIN, or SUPER_ADMIN role.",
+        "operationId": "deleteMenuItem",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/MenuItemIdPath" }
+        ],
+        "responses": {
+          "204": { "description": "Menu item deleted successfully (no content)" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/categories": {
+      "get": {
+        "tags": ["Category"],
+        "summary": "Get all categories",
+        "description": "Retrieve all active categories for menu items.",
+        "operationId": "getAllCategories",
+        "responses": {
+          "200": {
+            "description": "Categories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Category" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/categories/{id}": {
+      "get": {
+        "tags": ["Category"],
+        "summary": "Get category by ID",
+        "description": "Retrieve detailed information for a specific category.",
+        "operationId": "getCategoryById",
+        "parameters": [
+          { "$ref": "#/components/parameters/CategoryIdPath" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Category" }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/brands": {
+      "get": {
+        "tags": ["Brand"],
+        "summary": "Get all brands",
+        "description": "Retrieve all active brands.",
+        "operationId": "getAllBrands",
+        "responses": {
+          "200": {
+            "description": "Brands retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Brand" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/tax-rates": {
+      "get": {
+        "tags": ["TaxRate"],
+        "summary": "Get all tax rates",
+        "description": "Retrieve all active tax rates.",
+        "operationId": "getAllTaxRates",
+        "responses": {
+          "200": {
+            "description": "Tax rates retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/TaxRate" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/restaurants/allergens": {
+      "get": {
+        "tags": ["Allergen"],
+        "summary": "Get all allergens",
+        "description": "Retrieve all allergens.",
+        "operationId": "getAllAllergens",
+        "responses": {
+          "200": {
+            "description": "Allergens retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Allergen" }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "description": "Error message" },
+          "error": { "type": "string", "description": "Error details (optional)" }
+        },
+        "example": { "message": "Resource not found" }
+      },
+      "Restaurant": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "imageUrl": { "type": "string", "format": "uri" },
+          "restaurantPageUrl": { "type": "string", "format": "uri", "nullable": true },
+          "productCount": { "type": "integer" },
+          "salesCount": { "type": "integer" },
+          "phone": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "address": { "type": "string" },
+          "description": { "type": "string" },
+          "ownerId": { "type": "string", "format": "uuid" },
+          "isActive": { "type": "boolean" },
+          "timezone": { "type": "string" },
+          "currency": { "type": "string", "maxLength": 3 },
+          "location": { "$ref": "#/components/schemas/Location" },
+          "businessHours": { "$ref": "#/components/schemas/BusinessHours" },
+          "brandId": { "type": "string", "format": "uuid", "nullable": true },
+          "theme": { "type": "object", "additionalProperties": true, "nullable": true },
+          "rating": { "type": "number", "format": "float", "default": 0 },
+          "ratingCount": { "type": "integer", "default": 0 },
+          "deliveryFeeStructure": { "type": "object", "additionalProperties": true, "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "owner": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "string", "format": "uuid"},
+              "firstName": {"type": "string", "nullable": true},
+              "lastName": {"type": "string", "nullable": true},
+              "email": {"type": "string", "format": "email"}
+            }
+          },
+          "brand": { "$ref": "#/components/schemas/Brand", "nullable": true },
+          "menus": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Menu" }
+          },
+          "taxRates": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TaxRate" }
+          }
+        }
+      },
+      "RestaurantCreate": {
+        "type": "object",
+        "required": ["name", "imageUrl", "phone", "email", "address", "description", "timezone", "currency", "location", "businessHours"],
+        "properties": {
+          "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+          "imageUrl": { "type": "string", "format": "uri" },
+          "restaurantPageUrl": { "type": "string", "format": "uri", "nullable": true },
+          "phone": { "type": "string", "pattern": "^\\+?[0-9]{10,15}$" },
+          "email": { "type": "string", "format": "email" },
+          "address": { "type": "string", "minLength": 5, "maxLength": 200 },
+          "description": { "type": "string", "minLength": 10 },
+          "timezone": { "type": "string" },
+          "currency": { "type": "string", "length": 3 },
+          "location": { "$ref": "#/components/schemas/LocationInput" },
+          "businessHours": { "$ref": "#/components/schemas/BusinessHoursInput" },
+          "brandId": { "type": "string", "format": "uuid", "nullable": true },
+          "theme": { "type": "object", "additionalProperties": true, "nullable": true },
+          "deliveryFeeStructure": { "type": "object", "additionalProperties": true, "nullable": true },
+          "isActive": { "type": "boolean", "default": true }
+        }
+      },
+      "RestaurantUpdate": {
+        "allOf": [
+          { "$ref": "#/components/schemas/RestaurantCreate" }
+        ],
+        "properties": {
+           "name": { "type": "string", "minLength": 2, "maxLength": 100, "nullable": true },
+           "imageUrl": { "type": "string", "format": "uri", "nullable": true },
+           "phone": { "type": "string", "pattern": "^\\+?[0-9]{10,15}$", "nullable": true },
+           "email": { "type": "string", "format": "email", "nullable": true },
+           "address": { "type": "string", "minLength": 5, "maxLength": 200, "nullable": true },
+           "description": { "type": "string", "minLength": 10, "nullable": true },
+           "timezone": { "type": "string", "nullable": true },
+           "currency": { "type": "string", "length": 3, "nullable": true },
+           "location": { "$ref": "#/components/schemas/LocationInput", "nullable": true },
+           "businessHours": { "$ref": "#/components/schemas/BusinessHoursInput", "nullable": true }
+        },
+         "required": []
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "latitude": { "type": "number", "format": "float" },
+          "longitude": { "type": "number", "format": "float" },
+          "formattedAddress": { "type": "string", "nullable": true },
+          "placeId": { "type": "string", "nullable": true }
+        }
+      },
+      "LocationInput": {
+         "type": "object",
+         "properties": {
+           "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+           "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+           "formattedAddress": { "type": "string", "nullable": true },
+           "placeId": { "type": "string", "nullable": true }
+         },
+         "required": ["latitude", "longitude"]
+      },
+      "BusinessHours": {
+        "type": "object",
+        "properties": {
+          "monday": { "$ref": "#/components/schemas/BusinessDay" },
+          "tuesday": { "$ref": "#/components/schemas/BusinessDay" },
+          "wednesday": { "$ref": "#/components/schemas/BusinessDay" },
+          "thursday": { "$ref": "#/components/schemas/BusinessDay" },
+          "friday": { "$ref": "#/components/schemas/BusinessDay" },
+          "saturday": { "$ref": "#/components/schemas/BusinessDay" },
+          "sunday": { "$ref": "#/components/schemas/BusinessDay" }
+        }
+      },
+      "BusinessHoursInput": {
+        "type": "object",
+        "properties": {
+          "monday": { "$ref": "#/components/schemas/BusinessDayInput" },
+          "tuesday": { "$ref": "#/components/schemas/BusinessDayInput" },
+          "wednesday": { "$ref": "#/components/schemas/BusinessDayInput" },
+          "thursday": { "$ref": "#/components/schemas/BusinessDayInput" },
+          "friday": { "$ref": "#/components/schemas/BusinessDayInput" },
+          "saturday": { "$ref": "#/components/schemas/BusinessDayInput" },
+          "sunday": { "$ref": "#/components/schemas/BusinessDayInput" }
+        },
+        "required": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+      },
+      "BusinessDay": {
+        "type": "object",
+        "properties": {
+          "isOpen": { "type": "boolean" },
+          "openTime": { "type": "string", "format": "time", "nullable": true },
+          "closeTime": { "type": "string", "format": "time", "nullable": true }
+        }
+      },
+      "BusinessDayInput": {
+        "type": "object",
+        "properties": {
+          "isOpen": { "type": "boolean" },
+          "openTime": { "type": "string", "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", "nullable": true },
+          "closeTime": { "type": "string", "pattern": "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", "nullable": true }
+        },
+        "required": ["isOpen"]
+      },
+      "Menu": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "restaurantId": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "isActive": { "type": "boolean" },
+          "startTime": { "type": "string", "format": "date-time", "nullable": true },
+          "endTime": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "menuItems": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MenuItemAssociation" }
+          },
+          "restaurant": {
+             "type": "object",
+             "properties": {
+                "id": {"type": "string", "format": "uuid"},
+                "name": {"type": "string"},
+                "currency": {"type": "string"}
+             }
+          }
+        }
+      },
+      "MenuCreate": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+          "description": { "type": "string", "nullable": true },
+          "isActive": { "type": "boolean", "default": true },
+          "startTime": { "type": "string", "format": "date-time", "nullable": true },
+          "endTime": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "MenuUpdate": {
+         "allOf": [
+           { "$ref": "#/components/schemas/MenuCreate" }
+         ],
+         "properties": {
+            "name": { "type": "string", "minLength": 2, "maxLength": 100, "nullable": true }
+         },
+         "required": []
+      },
+      "MenuItemAssociation": {
+        "type": "object",
+        "properties": {
+           "menuItem": { "$ref": "#/components/schemas/MenuItem" }
+        }
+      },
+      "MenuItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "sku": { "type": "string" },
+          "finalPrice": { "type": "number", "format": "float" },
+          "mrp": { "type": "number", "format": "float" },
+          "discountPercentage": { "type": "number", "format": "float" },
+          "stockStatus": { "type": "string", "enum": ["IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK", "DISCONTINUED"] },
+          "rating": { "type": "number", "format": "float" },
+          "ratingCount": { "type": "integer" },
+          "categoryId": { "type": "string", "format": "uuid" },
+          "currency": { "type": "string", "maxLength": 3 },
+          "weightUnit": { "type": "string", "enum": ["GRAM", "KILOGRAM", "OUNCE", "POUND"] },
+          "isActive": { "type": "boolean" },
+          "isVisible": { "type": "boolean" },
+          "isFeatured": { "type": "boolean" },
+          "color": { "type": "string", "nullable": true },
+          "prepTime": { "type": "integer", "nullable": true },
+          "maxOrderQuantity": { "type": "integer", "nullable": true },
+          "minOrderQuantity": { "type": "integer" },
+          "taxRateId": { "type": "string", "format": "uuid", "nullable": true },
+          "brandId": { "type": "string", "format": "uuid", "nullable": true },
+          "nutritionInfo": { "type": "object", "additionalProperties": true, "nullable": true },
+          "allergens": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "availabilitySchedule": { "type": "object", "additionalProperties": true, "nullable": true },
+          "searchKeywords": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "flags": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "dietaryLabel": { "type": "string", "nullable": true },
+          "quantityLabel": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "deletedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "category": { "$ref": "#/components/schemas/Category" },
+          "images": { "type": "array", "items": { "$ref": "#/components/schemas/MenuItemImage" } },
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/MenuItemVariant" } },
+          "specifications": { "type": "array", "items": { "$ref": "#/components/schemas/MenuItemSpecification" } },
+          "restaurant": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "name": { "type": "string" },
+              "currency": { "type": "string" }
+            }
+          },
+          "brand": { "$ref": "#/components/schemas/Brand", "nullable": true },
+          "taxRate": { "$ref": "#/components/schemas/TaxRate", "nullable": true },
+          "menuItemAllergens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "allergen": { "$ref": "#/components/schemas/Allergen" }
+              }
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+               "type": "object",
+               "properties": {
+                  "id": {"type": "string", "format": "uuid"},
+                  "rating": {"type": "number", "format": "float"},
+                  "comment": {"type": "string"},
+                  "createdAt": {"type": "string", "format": "date-time"},
+                  "user": {
+                     "type": "object",
+                     "properties": {
+                        "id": {"type": "string", "format": "uuid"},
+                        "firstName": {"type": "string", "nullable": true},
+                        "lastName": {"type": "string", "nullable": true}
+                     }
+                  }
+               }
+            }
+          }
+        }
+      },
+      "MenuItemCreate": {
+        "type": "object",
+        "required": ["title", "sku", "finalPrice", "mrp", "categoryId", "currency", "weightUnit"],
+        "properties": {
+          "title": { "type": "string", "minLength": 2, "maxLength": 100 },
+          "description": { "type": "string", "nullable": true },
+          "sku": { "type": "string", "pattern": "^[A-Za-z0-9-_]{3,20}$" },
+          "finalPrice": { "type": "number", "minimum": 0 },
+          "mrp": { "type": "number", "minimum": 0 },
+          "discountPercentage": { "type": "number", "minimum": 0, "maximum": 100, "nullable": true },
+          "stockStatus": { "type": "string", "enum": ["IN_STOCK", "LOW_STOCK", "OUT_OF_STOCK", "DISCONTINUED"], "default": "IN_STOCK" },
+          "categoryId": { "type": "string", "format": "uuid" },
+          "currency": { "type": "string", "length": 3 },
+          "weightUnit": { "type": "string", "enum": ["GRAM", "KILOGRAM", "OUNCE", "POUND"] },
+          "isActive": { "type": "boolean", "default": true },
+          "isVisible": { "type": "boolean", "default": true },
+          "isFeatured": { "type": "boolean", "default": false },
+          "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "nullable": true },
+          "prepTime": { "type": "integer", "minimum": 0, "nullable": true },
+          "maxOrderQuantity": { "type": "integer", "minimum": 1, "nullable": true },
+          "minOrderQuantity": { "type": "integer", "minimum": 1, "default": 1 },
+          "taxRateId": { "type": "string", "format": "uuid", "nullable": true },
+          "brandId": { "type": "string", "format": "uuid", "nullable": true },
+          "nutritionInfo": { "type": "object", "additionalProperties": true, "nullable": true },
+          "allergens": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "availabilitySchedule": { "type": "object", "additionalProperties": true, "nullable": true },
+          "variants": { "type": "array", "items": { "$ref": "#/components/schemas/MenuItemVariantCreate" }, "nullable": true },
+          "images": { "type": "array", "items": { "$ref": "#/components/schemas/MenuItemImageCreate" }, "nullable": true },
+          "specifications": { "type": "array", "items": { "$ref": "#/components/schemas/MenuItemSpecificationCreate" }, "nullable": true },
+          "searchKeywords": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "flags": { "type": "array", "items": { "type": "string" }, "nullable": true },
+          "dietaryLabel": { "type": "string", "nullable": true },
+          "quantityLabel": { "type": "string", "nullable": true }
+        }
+      },
+      "MenuItemUpdate": {
+        "allOf": [
+          { "$ref": "#/components/schemas/MenuItemCreate" }
+        ],
+        "properties": {
+            "title": { "type": "string", "minLength": 2, "maxLength": 100, "nullable": true },
+            "sku": { "type": "string", "pattern": "^[A-Za-z0-9-_]{3,20}$", "nullable": true },
+            "finalPrice": { "type": "number", "minimum": 0, "nullable": true },
+            "mrp": { "type": "number", "minimum": 0, "nullable": true },
+            "categoryId": { "type": "string", "format": "uuid", "nullable": true },
+            "currency": { "type": "string", "length": 3, "nullable": true },
+            "weightUnit": { "type": "string", "enum": ["GRAM", "KILOGRAM", "OUNCE", "POUND"], "nullable": true }
+        },
+        "required": []
+      },
+      "MenuItemVariant": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "weight": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MenuItemVariantCreate": {
+        "type": "object",
+        "required": ["weight", "isActive"],
+        "properties": {
+          "weight": { "type": "string" },
+          "isActive": { "type": "boolean" }
+        }
+      },
+      "MenuItemImage": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "imageUrl": { "type": "string", "format": "uri" },
+          "isPrimary": { "type": "boolean" },
+          "altText": { "type": "string", "nullable": true },
+          "order": { "type": "integer", "default": 0 },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MenuItemImageCreate": {
+        "type": "object",
+        "required": ["imageUrl", "isPrimary"],
+        "properties": {
+          "imageUrl": { "type": "string", "format": "uri" },
+          "isPrimary": { "type": "boolean" },
+          "altText": { "type": "string", "nullable": true },
+          "order": { "type": "integer", "default": 0 }
+        }
+      },
+      "MenuItemSpecification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "specKey": { "type": "string" },
+          "specValue": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MenuItemSpecificationCreate": {
+        "type": "object",
+        "required": ["specKey", "specValue"],
+        "properties": {
+          "specKey": { "type": "string" },
+          "specValue": { "type": "string" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "imageUrl": { "type": "string", "format": "uri", "nullable": true },
+          "isActive": { "type": "boolean" },
+          "order": { "type": "integer" },
+          "parentId": { "type": "string", "format": "uuid", "nullable": true },
+          "discountPercentage": { "type": "number", "format": "float", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "parent": { "$ref": "#/components/schemas/Category", "nullable": true },
+          "children": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Category" }
+          },
+          "menuItems": {
+             "type": "array",
+             "items": { "$ref": "#/components/schemas/MenuItem" }
+          }
+        }
+      },
+      "Brand": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "logoUrl": { "type": "string", "format": "uri" },
+          "description": { "type": "string", "nullable": true },
+          "websiteUrl": { "type": "string", "format": "uri", "nullable": true },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "TaxRate": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "rate": { "type": "number", "format": "float" },
+          "region": { "type": "string", "nullable": true },
+          "effectiveFrom": { "type": "string", "format": "date-time" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Allergen": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "parameters": {
+      "RestaurantIdPath": {
+        "name": "restaurantId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "ID of the restaurant"
+      },
+      "MenuIdPath": {
+        "name": "menuId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "ID of the menu"
+      },
+      "MenuItemIdPath": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "ID of the menu item"
+      },
+      "CategoryIdPath": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" },
+        "description": "ID of the category"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad Request - Invalid input or validation error",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized - Not authenticated or invalid token",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden - Insufficient permissions",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "NotFound": {
+        "description": "Not Found - Resource not found",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+        }
+      },
+      "InternalServerError": {
+        "description": "Internal Server Error",
+        "content": {
+          "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
+      }
+    }
+  }
+}

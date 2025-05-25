@@ -1,18 +1,28 @@
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+import { PrismaClient } from "../prisma/generated/prisma";
+import logger from "./utils/logger";
 
-dotenv.config();
-
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: Number(process.env.DB_PORT),
+// Create a singleton instance of PrismaClient
+const prisma = new PrismaClient({
+  log:
+    process.env.NODE_ENV === "development"
+      ? ["query", "error", "warn"]
+      : ["error"],
 });
 
-pool.on('error', (err) => {
-  console.error('Database connection error:', err.stack);
+// Handle potential connection errors
+prisma
+  .$connect()
+  .then((): void => {
+    // logger.info("Successfully connected to the database");
+  })
+  .catch((error: Error): void => {
+    logger.error(`Failed to connect to the database: ${error.message}`);
+  });
+
+// Add shutdown handling for graceful exit
+process.on("beforeExit", async () => {
+  await prisma.$disconnect();
+  logger.info("Database connection closed");
 });
 
-export default pool;
+export default prisma;
