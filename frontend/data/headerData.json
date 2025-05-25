@@ -1,0 +1,14 @@
+{
+  "languages": [
+    { "code": "en", "name": "English" },
+    { "code": "bn", "name": "Bengali" }
+  ],
+  "currencies": [
+    { "code": "usd", "name": "Dollar", "symbol": "$" },
+    { "code": "bdt", "name": "Taka", "symbol": "৳" }
+  ],
+  "phone": "+880 174 666 9174",
+  "whatsapp": "+880 181 337 9277",
+  "topMessage": "World's Fastest Online Shopping Destination",
+  "logo": "RestntHub"
+}

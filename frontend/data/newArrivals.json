@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "image": "/images/products/burger.jpg",
+    "badge": "NEW",
+    "category": "Burgers",
+    "name": "Classic Beef Burger",
+    "rating": 5,
+    "price": "$8.99",
+    "oldPrice": "$10.99",
+    "extraInfo": "Best Seller"
+  },
+  {
+    "id": 2,
+    "image": "/images/products/pizza.jpg",
+    "badge": "SALE",
+    "category": "Pizza",
+    "name": "Pepperoni Pizza",
+    "rating": 4,
+    "price": "$12.99",
+    "oldPrice": "$15.99"
+  },
+  {
+    "id": 3,
+    "image": "/images/products/salad.jpg",
+    "category": "Salads",
+    "name": "Caesar Salad",
+    "rating": 4,
+    "price": "$7.50"
+  },
+  {
+    "id": 4,
+    "image": "/images/products/sushi.jpg",
+    "badge": "NEW",
+    "category": "Sushi",
+    "name": "Salmon Nigiri",
+    "rating": 5,
+    "price": "$14.00",
+    "extraInfo": "Limited Edition"
+  },
+  {
+    "id": 5,
+    "image": "/images/products/dessert.jpg",
+    "category": "Desserts",
+    "name": "Chocolate Lava Cake",
+    "rating": 5,
+    "price": "$6.50",
+    "oldPrice": "$7.50"
+  }
+]

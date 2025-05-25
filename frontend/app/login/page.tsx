@@ -5,6 +5,8 @@ import { useAuth } from "../../lib/authContext";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +22,7 @@ export default function Login() {
       }
 
       const response = await axios.post<LoginResponse>(
-        "http://192.168.1.102:3001/auth/login",
+        `${API_URL}/auth/login`,
         {
           email,
           password,

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "../../lib/authContext";
+import { useAuth } from "../../../lib/authContext";
 import { useRouter } from "next/navigation";
-import { getCustomerOrders, Order } from "../../lib/api";
+import { getCustomerOrders, Order } from "../../../lib/api";
 import Link from "next/link";
 
 export default function OrderHistory() {

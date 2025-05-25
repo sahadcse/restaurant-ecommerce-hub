@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getMenuItems, MenuItem } from "../../../lib/api";
-import Link from "next/link";
-import Image from "next/image";
 import { useCart } from "../../../lib/cartContext";
-import CartModal from "../../../components/CartModal";
-import { useAuth } from "../../../lib/authContext";
+import { useWishlist, WishlistItem } from "../../../lib/wishlistContext";
+import ProductCard from "@/components/ProductCard";
+import Footer from "@/components/Footer";
+import Header from "@/components/Header";
 
 export default function RestaurantMenu() {
   const { id } = useParams();
@@ -15,8 +15,7 @@ export default function RestaurantMenu() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
-  const { token } = useAuth();
-  const { logout } = useAuth();
+  const { addToWishlist, removeFromWishlist, isItemInWishlist } = useWishlist();
 
   useEffect(() => {
     if (isNaN(restaurantId)) return;
@@ -34,36 +33,26 @@ export default function RestaurantMenu() {
     fetchMenu();
   }, [restaurantId]);
 
+  const handleWishlistToggle = (menuItem: MenuItem) => {
+    const wishlistItem: WishlistItem = {
+      id: menuItem.id,
+      restaurant_id: menuItem.restaurant_id,
+      name: menuItem.name,
+      price: Number(menuItem.price),
+      image_url: menuItem.image_url,
+      description: menuItem.description,
+    };
+
+    if (isItemInWishlist(menuItem.id)) {
+      removeFromWishlist(menuItem.id);
+    } else {
+      addToWishlist(wishlistItem);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-black text-white p-4 flex items-center justify-between">
-        <Link href="/" className="text-2xl font-bold">
-          Restaurant Hub
-        </Link>
-        {token ? (
-        <div className="flex gap-4">
-          <Link href="/" className="text-primary hover:underline">
-            Back to Home
-          </Link>
-          <button
-            onClick={logout}
-            className="text-red-400 hover:text-red-300"
-          >
-            Logout
-          </button>
-          <Link href="/dashboard/menu" className="text-white hover:underline">
-              DashboardRestaurant
-          </Link>
-        </div>
-        ) : (
-          <Link href="/login" className="text-white hover:underline">
-            Login
-          </Link>
-        )}
-      </header>
-
-      {/* Main Content */}
+      <Header />
       <main className="max-w-4xl mx-auto p-6">
         <h2 className="text-3xl font-semibold mb-6 text-black">Menu</h2>
         {loading ? (
@@ -73,49 +62,22 @@ export default function RestaurantMenu() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {menuItems.map((item) => (
-              <div
+              <ProductCard
                 key={item.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
-              >
-                {item.image_url ? (
-                  <div className="relative w-full h-32 mb-4">
-                    <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover rounded-md"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full h-32 bg-gray-200 rounded-md mb-4 flex items-center justify-center">
-                    <span className="text-gray-500">No Image</span>
-                  </div>
-                )}
-                <h3 className="text-xl font-medium text-black">{item.name}</h3>
-                <p className="text-gray-600">
-                  {item.description || "No description"}
-                </p>
-                <p className="text-primary font-semibold mt-2">
-                  ${Number(item.price).toFixed(2)}
-                </p>
-                <button
-                  onClick={() => addToCart(item)}
-                  className="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors"
-                >
-                  Add to Cart
-                </button>
-              </div>
+                id={item.id}
+                name={item.name}
+                image={item.image_url || ""}
+                price={Number(item.price)}
+                description={item.description}
+                inWishlist={isItemInWishlist(item.id)}
+                onWishlistToggle={() => handleWishlistToggle(item)}
+                onAddToCart={() => addToCart(item)}
+              />
             ))}
           </div>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="bg-black text-white p-4 text-center">
-        <p>© 2025 Restaurant Hub. All rights reserved.</p>
-      </footer>
-      <CartModal />
+      <Footer />
     </div>
   );
 }

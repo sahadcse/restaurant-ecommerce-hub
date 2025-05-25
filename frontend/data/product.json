@@ -1,0 +1,228 @@
+{
+  "product": {
+    "id": 1,
+    "title": "Potato Chips 52g, American Cream & Onion Flavour, Crunchy Chips & Snacks",
+    "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1990.",
+    "sku": "WH12",
+    "final_price": 664.0,
+    "mrp": 2999.0,
+    "discount_percentage": 78.0,
+    "stock_status": "IN STOCK",
+    "rating": 4.0,
+    "rating_count": 992,
+    "created_at": "2025-04-25T10:00:00Z",
+    "updated_at": "2025-04-25T10:00:00Z"
+  },
+  "images": [
+    {
+      "id": 1,
+      "product_id": 1,
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/1_1.jpg",
+      "is_primary": true,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "product_id": 1,
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/2_1.jpg",
+      "is_primary": false,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 3,
+      "product_id": 1,
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/3_1.jpg",
+      "is_primary": false,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 4,
+      "product_id": 1,
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/4_1.jpg",
+      "is_primary": false,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 5,
+      "product_id": 1,
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/5_1.jpg",
+      "is_primary": false,
+      "created_at": "2025-04-25T10:00:00Z"
+    }
+  ],
+  "specifications": [
+    {
+      "id": 1,
+      "product_id": 1,
+      "spec_key": "Closure",
+      "spec_value": "Hook & Loop",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "product_id": 1,
+      "spec_key": "Sole",
+      "spec_value": "Polyvinyl Chloride",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 3,
+      "product_id": 1,
+      "spec_key": "Width",
+      "spec_value": "Medium",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 4,
+      "product_id": 1,
+      "spec_key": "Outer Material",
+      "spec_value": "A-Grade Standard Quality",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 5,
+      "product_id": 1,
+      "spec_key": "Model",
+      "spec_value": "SKU140",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 6,
+      "product_id": 1,
+      "spec_key": "Weight",
+      "spec_value": "500 g",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 7,
+      "product_id": 1,
+      "spec_key": "Dimensions",
+      "spec_value": "35 × 30 × 7 cm",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 8,
+      "product_id": 1,
+      "spec_key": "Color",
+      "spec_value": "Black, Pink, Red, White",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 9,
+      "product_id": 1,
+      "spec_key": "Size",
+      "spec_value": "10 X 20",
+      "created_at": "2025-04-25T10:00:00Z"
+    }
+  ],
+  "variants": [
+    {
+      "id": 1,
+      "product_id": 1,
+      "weight": "250g",
+      "is_active": true,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "product_id": 1,
+      "weight": "500g",
+      "is_active": false,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 3,
+      "product_id": 1,
+      "weight": "1kg",
+      "is_active": false,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 4,
+      "product_id": 1,
+      "weight": "2kg",
+      "is_active": false,
+      "created_at": "2025-04-25T10:00:00Z"
+    }
+  ],
+  "restaurant": {
+    "id": 1,
+    "name": "Ocean Crate",
+    "restaurant_id": 1,
+    "restaurant_page_url": "/restaurant/1",
+    "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/vendor/3.jpg",
+    "product_count": 358,
+    "sales_count": 5587,
+    "phone": "+00 987654321",
+    "email": "Example@gmail.com",
+    "address": "2548 Broaddus Maple Court, Madisonville KY 4783, USA",
+    "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+    "created_at": "2025-04-25T10:00:00Z"
+  },
+  "reviews": [
+    {
+      "id": 1,
+      "product_id": 1,
+      "user_name": "Mariya Lykra",
+      "user_image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/user/1.jpg",
+      "rating": 4.0,
+      "comment": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "product_id": 1,
+      "user_name": "Moris Willson",
+      "user_image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/user/2.jpg",
+      "rating": 3.0,
+      "comment": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.",
+      "created_at": "2025-04-25T10:00:00Z"
+    }
+  ],
+  "related_products": [
+    {
+      "id": 1,
+      "product_id": 1,
+      "related_product_id": 2,
+      "title": "Honey Spiced Nuts",
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/8_1.jpg",
+      "final_price": 32.0,
+      "mrp": 45.0,
+      "rating": 3.0,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "product_id": 1,
+      "related_product_id": 3,
+      "title": "Dates Value Pouch",
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/2_1.jpg",
+      "final_price": 56.0,
+      "mrp": 60.0,
+      "rating": 5.0,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 3,
+      "product_id": 1,
+      "related_product_id": 4,
+      "title": "Graps Mix Snack",
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/5_1.jpg",
+      "final_price": 28.0,
+      "mrp": 35.0,
+      "rating": 2.0,
+      "created_at": "2025-04-25T10:00:00Z"
+    },
+    {
+      "id": 4,
+      "product_id": 1,
+      "related_product_id": 5,
+      "title": "Roasted Almonds Pack",
+      "image_url": "https://maraviyainfotech.com/wrapbootstrap/grabit-html/grabit-html/assets/img/product-images/9_1.jpg",
+      "final_price": 16.0,
+      "mrp": 23.0,
+      "rating": 5.0,
+      "created_at": "2025-04-25T10:00:00Z"
+    }
+  ]
+}

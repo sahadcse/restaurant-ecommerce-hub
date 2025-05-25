@@ -4,14 +4,16 @@ import { useEffect, useState } from "react";
 import { getRestaurants, Restaurant } from "../lib/api";
 import Image from "next/image";
 import Link from "next/link";
-import CartModal from "../components/CartModal";
+// import CartModal from "../components/CartModal";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 import { useAuth } from "../lib/authContext";
 
 export default function Home() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
-  const { token, logout } = useAuth();
+  const { token } = useAuth();
 
   useEffect(() => {
     const fetchRestaurants = async () => {
@@ -29,33 +31,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="bg-black text-white p-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Restaurant Hub</h1>
-        <div className="flex gap-4">
-          <Link href="/dashboard/orders" className="text-primary hover:underline">
-            OrdersRES
-          </Link>
-          {token ? (
-            <button
-              onClick={logout}
-              className="text-red-400 hover:text-red-300"
-            >
-              Logout
-            </button>
-          ) : (
-            <Link href="/login" className="text-primary hover:underline">
-              Login
-            </Link>
-          )}
-          <Link
-            href="/admin/restaurants"
-            className="text-primary hover:underline"
-          >
-            Admin
-          </Link>
-        </div>
-      </header>
+      {/* Header */}
+      <Header />
 
+      {/* Main content */}
       <main className="max-w-4xl mx-auto p-6">
         {token && (
           <p className="text-lg text-gray-700 mb-4">
@@ -76,9 +55,9 @@ export default function Home() {
                 key={restaurant.id}
                 className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
               >
-                {restaurant.logo_url ? (
+                {restaurant? (
                   <Image
-                    src={restaurant.logo_url}
+                    src={"/placeholder-image.jpg"}
                     alt={restaurant.name}
                     width={300}
                     height={128}
@@ -94,7 +73,7 @@ export default function Home() {
                 </h3>
                 <p className="text-gray-600">{restaurant.location}</p>
                 <Link href={`/restaurant/${restaurant.id}`}>
-                  <button className="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors">
+                  <button className="mt-2 bg-primary text-white px-4 py-2 rounded hover:bg-teal-700 transition-colors cursor-pointer">
                     View Menu
                   </button>
                 </Link>
@@ -103,10 +82,8 @@ export default function Home() {
           </div>
         )}
       </main>
-      <footer className="bg-black text-white p-4 text-center">
-        <p>© 2025 Restaurant Hub. All rights reserved.</p>
-      </footer>
-      <CartModal />
+      <Footer />
+      {/* <CartModal /> */}
     </div>
   );
 }

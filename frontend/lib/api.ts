@@ -1,7 +1,8 @@
+// frontend/lib/api.ts
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.102:3001", // Backend URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL || (console.error("API URL is not defined"), ""), // Backend URL
   headers: {
     "Content-Type": "application/json",
   },
