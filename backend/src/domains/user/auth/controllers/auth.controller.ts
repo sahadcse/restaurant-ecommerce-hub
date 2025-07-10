@@ -1,16 +1,18 @@
 import { Request, Response, NextFunction } from "express";
-import * as authService from "./auth.service";
-import * as authRepo from "./auth.repository";
-import { extractTokenFromHeader } from "../../../utils/jwt.utils";
+import * as authService from "../services/auth.service";
+import * as authRepo from "../repositories/auth.repository";
+import { extractTokenFromHeader } from "../../../../utils/jwt.utils";
 import {
   LoginDto,
   RefreshTokenDto,
   PasswordResetRequestDto,
   PasswordResetConfirmDto,
   PasswordChangeDto,
-} from "../types/auth.types";
-import logger from "../../../utils/logger";
-import AppError from "../../../utils/AppError";
+} from "../../types/auth.types";
+import logger from "../../../../utils/logger";
+import AppError from "../../../../utils/AppError";
+// Add notification integration
+import { notificationIntegration } from "../../../notification/services/integration.service";
 
 /**
  * Handle user login
@@ -26,6 +28,21 @@ export const login = async (
     const userAgent = req.headers["user-agent"];
 
     const result = await authService.login(loginData, ipAddress, userAgent);
+
+    // Send login notification for security
+    try {
+      await notificationIntegration.system.securityAlert(
+        result.user.id,
+        "login_success",
+        {
+          ipAddress: ipAddress,
+          userAgent: userAgent,
+          loginTime: new Date().toISOString(),
+        }
+      );
+    } catch (notificationError) {
+      logger.warn("Failed to send login notification:", notificationError);
+    }
 
     res.status(200).json(result);
   } catch (error) {
@@ -123,7 +140,27 @@ export const requestPasswordReset = async (
 
     await authService.requestPasswordReset(resetData, ipAddress);
 
-    // Always return success even if email doesn't exist (security best practice)
+    // Send password reset notification
+    try {
+      // Note: We don't want to reveal if email exists, so we'll handle this in the service
+      const user = await authRepo.findUserByEmail(resetData.email);
+      if (user) {
+        await notificationIntegration.system.securityAlert(
+          user.id,
+          "password_reset_requested",
+          {
+            requestedAt: new Date().toISOString(),
+            ipAddress: ipAddress,
+          }
+        );
+      }
+    } catch (notificationError) {
+      logger.warn(
+        "Failed to send password reset notification:",
+        notificationError
+      );
+    }
+
     res.status(200).json({
       message:
         "If your email exists in our system, you will receive password reset instructions.",
@@ -145,7 +182,34 @@ export const confirmPasswordReset = async (
     const confirmData: PasswordResetConfirmDto = req.body;
     const ipAddress = req.ip;
 
-    await authService.confirmPasswordReset(confirmData, ipAddress);
+    // The service should return the userId, not void
+    const result = await authService.confirmPasswordReset(
+      confirmData,
+      ipAddress
+    );
+
+    // Send password reset confirmation notification
+    try {
+      // Extract userId from result if it's an object, or use result directly if it's a string
+      // const userId = typeof result === "string" ? result : result?.userId;
+      const userId = result; // Assuming result is the userId string
+
+      if (userId) {
+        await notificationIntegration.system.securityAlert(
+          userId,
+          "password_reset_completed",
+          {
+            completedAt: new Date().toISOString(),
+            ipAddress: ipAddress,
+          }
+        );
+      }
+    } catch (notificationError) {
+      logger.warn(
+        "Failed to send password reset confirmation notification:",
+        notificationError
+      );
+    }
 
     res.status(200).json({ message: "Password has been reset successfully" });
   } catch (error) {
@@ -170,6 +234,23 @@ export const changePassword = async (
     const ipAddress = req.ip;
 
     await authService.changePassword(req.user.id, passwordData, ipAddress);
+
+    // Send password change notification
+    try {
+      await notificationIntegration.system.securityAlert(
+        req.user.id,
+        "password_changed",
+        {
+          changedAt: new Date().toISOString(),
+          ipAddress: ipAddress,
+        }
+      );
+    } catch (notificationError) {
+      logger.warn(
+        "Failed to send password change notification:",
+        notificationError
+      );
+    }
 
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {

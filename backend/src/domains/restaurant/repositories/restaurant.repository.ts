@@ -83,18 +83,17 @@ export const findRestaurantById = async (id: string) => {
             email: true,
           },
         },
-        brand: true,
-        menus: {
-          where: { isActive: true },
-          orderBy: { createdAt: "desc" },
-        },
-        taxRates: {
-          where: { isActive: true },
+        brand: {
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+          },
         },
       },
     });
   } catch (error) {
-    logger.error(`Repository error in findRestaurantById for id ${id}:`, error);
+    logger.error(`Error finding restaurant by id ${id}:`, error);
     throw error;
   }
 };
@@ -349,43 +348,19 @@ export const findMenuItemById = async (id: string) => {
     return await prisma.menuItem.findUnique({
       where: { id },
       include: {
-        category: true,
-        images: {
-          orderBy: { order: "asc" },
-        },
-        variants: true,
-        specifications: true,
-        restaurant: {
+        category: {
           select: {
-            id: true,
             name: true,
-            currency: true,
           },
         },
-        brand: true,
-        taxRate: true,
-        menuItemAllergens: {
-          include: {
-            allergen: true,
-          },
-        },
-        reviews: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-          orderBy: { createdAt: "desc" },
-          take: 10,
+        images: {
+          where: { isPrimary: true },
+          take: 1,
         },
       },
     });
   } catch (error) {
-    logger.error(`Repository error in findMenuItemById for id ${id}:`, error);
+    logger.error(`Error finding menu item by id ${id}:`, error);
     throw error;
   }
 };
@@ -709,6 +684,22 @@ export const assignMenuItemToMenu = async (
       `Repository error in assignMenuItemToMenu for menuItemId ${menuItemId} and menuId ${menuId}:`,
       error
     );
+    throw error;
+  }
+};
+
+export const findRestaurantsByUserId = async (userId: string) => {
+  try {
+    return await prisma.restaurant.findMany({
+      where: { ownerId: userId },
+      select: {
+        id: true,
+        name: true,
+        isActive: true,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error finding restaurants by user id ${userId}:`, error);
     throw error;
   }
 };

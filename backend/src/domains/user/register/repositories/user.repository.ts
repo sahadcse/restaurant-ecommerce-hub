@@ -1,10 +1,10 @@
-import prisma from "../../../db";
-import { UserCreateData, UserResponseDto } from "../types/user.types";
+import prisma from "../../../../db";
+import { UserCreateData, UserResponseDto } from "../../types/user.types";
 import {
   User,
   UserRole,
   AccountStatus,
-} from "../../../../prisma/generated/prisma";
+} from "../../../../../prisma/generated/prisma";
 
 // Function to find a user by email
 export const findUserByEmail = async (email: string): Promise<User | null> => {

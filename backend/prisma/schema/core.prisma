@@ -580,3 +580,5 @@ model TaxRate {
   @@index([isActive]) // Added index
   @@index([name]) // Added index
 }
+
+

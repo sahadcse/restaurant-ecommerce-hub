@@ -26,31 +26,29 @@ config/secrets/
 src/MVP/
 docs/
 prisma/generated/
+prisma/schema/migrations/
+prisma/schema/migrations/dev.db*
+prisma/schema/migrations/*.db*
+
+# Email queue and monitoring files
+email-queue/
+monitoring/
+logs/
+*.log
+
+# TypeScript and Node.js specific
+*.tsbuildinfo
 
 # Build outputs
 dist/
 build/
 out/
-*.tsbuildinfo
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
 
 # Runtime data
 pids/
 *.pid
 *.seed
 *.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-.nyc_output/
 
 # Dependency directories
 jspm_packages/
@@ -118,3 +116,110 @@ docker-compose.override.yml
 uploads/
 public/uploads/
 static/uploads/
+
+# Backend specific additions
+# Email service files
+email-templates/compiled/
+email-queue-data/
+
+# Stripe and payment related
+stripe-webhooks/
+payment-logs/
+
+# Cloudinary and media uploads
+media-temp/
+image-cache/
+video-cache/
+
+# Database backups and exports
+database-backups/
+*.sql
+*.dump
+*.backup
+
+# Testing and development
+test-data/
+mock-data/
+fixtures/
+.nyc_output/
+coverage/
+
+# Security and authentication
+jwt-keys/
+oauth-tokens/
+session-store/
+*.pem
+*.key
+refresh-tokens/
+
+# Performance and monitoring
+performance-logs/
+apm-data/
+metrics/
+profiling/
+
+# Documentation that might contain sensitive info
+api-docs/private/
+internal-docs/
+deployment-notes/
+
+# Domain-specific generated files
+src/domains/*/generated/
+src/domains/*/cache/
+src/domains/*/temp/
+
+# Service-specific
+src/services/cache/
+src/services/temp/
+src/services/logs/
+
+# Prisma specific additions
+prisma/dev.db*
+prisma/*.db
+prisma/seed-data/
+prisma/backup/
+
+# Environment and configuration
+config/local/
+config/development/
+config/production/
+local-config/
+
+# Deployment and CI/CD
+deployment/
+.github/workflows/secrets/
+k8s/secrets/
+docker/secrets/
+
+# Third-party integrations
+integrations/temp/
+webhooks/temp/
+external-apis/cache/
+
+# Redis and caching
+redis-data/
+cache-data/
+session-data/
+
+# Email system specific
+email-system/queue/
+email-system/failed/
+email-system/logs/
+
+# Media and content management
+content/uploads/
+media/processed/
+media/thumbnails/
+cloudinary-cache/
+
+# Analytics and reporting
+analytics-data/
+reports/generated/
+export-data/
+
+# Additional OS and editor files
+*.swp
+*.swo
+.vscode/settings.json
+.idea/workspace.xml
+.fleet/

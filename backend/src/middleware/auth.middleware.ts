@@ -50,8 +50,8 @@ export const authenticate = async (
   next();
 };
 
-// Authorize by user role
-export const authorizeRoles = (...roles: string[]) => {
+// Authorize by user role - Updated to accept UserRole enum values
+export const authorizeRoles = (...roles: UserRole[]) => {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return next(new AppError("Forbidden: insufficient role", 403));

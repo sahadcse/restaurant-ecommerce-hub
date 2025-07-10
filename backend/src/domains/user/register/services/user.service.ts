@@ -1,18 +1,26 @@
-import * as userRepo from "./user.repository";
-import { UserCreateDto, UserResponseDto } from "../types/user.types";
-import AppError from "../../../utils/AppError";
-import { UserRole, AccountStatus } from "../../../../prisma/generated/prisma";
-import { isValidEmail, isValidPassword } from "../../../utils/validation.utils";
-import { hashPassword } from "../../../utils/crypto.utils";
-import { createUserAudit } from "../../audit/audit.service";
-import { generateRandomToken } from "../../../utils/crypto.utils";
-import { generateCustomToken } from "../../../utils/jwt.utils";
+import * as userRepo from "./../repositories/user.repository";
+import { UserCreateDto, UserResponseDto } from "../../types/user.types";
+import AppError from "../../../../utils/AppError";
+import {
+  UserRole,
+  AccountStatus,
+} from "../../../../../prisma/generated/prisma";
+import {
+  isValidEmail,
+  isValidPassword,
+} from "../../../../utils/validation.utils";
+import { hashPassword } from "../../../../utils/crypto.utils";
+import { createUserAudit } from "../../../audit/audit.service";
+import { generateRandomToken } from "../../../../utils/crypto.utils";
+import { generateCustomToken } from "../../../../utils/jwt.utils";
 import {
   sendEmail,
   getVerificationEmailTemplate,
-} from "../../../utils/email.utils";
-import logger from "../../../utils/logger";
+} from "../../../../utils/email.utils";
+import logger from "../../../../utils/logger";
 import jwt from "jsonwebtoken";
+// Add notification integration
+import { notificationIntegration } from "../../../notification/services/integration.service";
 
 /**
  * Create a new user in the system
@@ -77,6 +85,24 @@ export const createUser = async (
     userAgent,
     changedBy: createdBy,
   });
+
+  // Send welcome notification
+  try {
+    await notificationIntegration.system.securityAlert(
+      result.id,
+      "account_created",
+      {
+        email: data.email,
+        role: role,
+        createdAt: new Date().toISOString(),
+      }
+    );
+  } catch (notificationError) {
+    logger.warn(
+      "Failed to send account creation notification:",
+      notificationError
+    );
+  }
 
   // After transaction completes successfully, create an additional audit log
   await createUserAudit({
@@ -268,7 +294,19 @@ export const registerUser = async (
 
   if (!emailSent) {
     logger.warn(`Failed to send verification email to ${email}`);
-    // Continue the process even if email fails - user can request a new verification email
+  }
+
+  // Send welcome notification
+  try {
+    await notificationIntegration.promotional.personalizedDiscount(
+      newUser.id,
+      "WELCOME10",
+      10,
+      new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      undefined // Remove tenantId since User model doesn't have it
+    );
+  } catch (notificationError) {
+    logger.warn("Failed to send welcome notification:", notificationError);
   }
 
   // Return user data without sensitive information
@@ -313,6 +351,22 @@ export const verifyEmail = async (token: string): Promise<void> => {
 
     // Update user status to active
     await userRepo.updateUserStatus(user.id, AccountStatus.ACTIVE);
+
+    // Send account activation notification
+    try {
+      await notificationIntegration.system.securityAlert(
+        user.id,
+        "email_verified",
+        {
+          verifiedAt: new Date().toISOString(),
+        }
+      );
+    } catch (notificationError) {
+      logger.warn(
+        "Failed to send email verification notification:",
+        notificationError
+      );
+    }
 
     // Create audit log for verification
     await createUserAudit({

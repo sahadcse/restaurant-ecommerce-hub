@@ -1,14 +1,14 @@
 import { Router } from "express";
-import * as authController from "./auth.controller";
-import { authenticate } from "../../../middleware/auth.middleware";
-import { validateRequest } from "../../../middleware/validation.middleware";
+import * as authController from "./../controllers/auth.controller";
+import { authenticate } from "../../../../middleware/auth.middleware";
+import { validateRequest } from "../../../../middleware/validation.middleware";
 import {
   loginSchema,
   refreshTokenSchema,
   passwordResetRequestSchema,
   passwordResetConfirmSchema,
   passwordChangeSchema,
-} from "../types/auth.validation";
+} from "../../types/auth.validation";
 
 const router = Router();
 

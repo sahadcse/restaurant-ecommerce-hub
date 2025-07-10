@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from "express";
-import * as userService from "./user.service";
-import { UserCreateDto } from "../types/user.types";
-import AppError from "../../../utils/AppError";
-import { generateToken, JwtPayload } from "../../../utils/jwt.utils";
-import { UserRole } from "../../../../prisma/generated/prisma";
-import { generateRandomPassword } from "../../../utils/crypto.utils";
-import { isValidPassword } from "../../../utils/validation.utils";
-import prisma from "../../../db";
-import { generateCustomToken } from "../../../utils/jwt.utils";
-import * as userRepo from "./user.repository";
-import { getVerificationEmailTemplate } from "../../../utils/email.utils";
-import { sendEmail } from "../../../utils/email.utils";
-import logger from "../../../utils/logger";
+import * as userService from "../services/user.service";
+import { UserCreateDto } from "../../types/user.types";
+import AppError from "../../../../utils/AppError";
+import { generateToken, JwtPayload } from "../../../../utils/jwt.utils";
+import { UserRole } from "../../../../../prisma/generated/prisma";
+import { generateRandomPassword } from "../../../../utils/crypto.utils";
+import { isValidPassword } from "../../../../utils/validation.utils";
+import prisma from "../../../../db";
+import { generateCustomToken } from "../../../../utils/jwt.utils";
+import * as userRepo from "./../repositories/user.repository";
+import { getVerificationEmailTemplate } from "../../../../utils/email.utils";
+import { sendEmail } from "../../../../utils/email.utils";
+import logger from "../../../../utils/logger";
 
 /**
  * Base registration handler that all role-specific registration methods use
@@ -324,8 +324,8 @@ export const createFirstSuperAdmin = async (
 };
 
 /**
-* Register a new user
-* @deprecated Use role-specific endpoints instead
+ * Register a new user
+ * @deprecated Use role-specific endpoints instead
  */
 export const registerUser = async (
   req: Request,

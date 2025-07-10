@@ -6,24 +6,24 @@ import {
   PasswordResetRequestDto,
   PasswordResetConfirmDto,
   PasswordChangeDto,
-} from "../types/auth.types";
-import * as authRepo from "./auth.repository";
-import { hashPassword, verifyPassword } from "../../../utils/crypto.utils";
+} from "../../types/auth.types";
+import * as authRepo from "../repositories/auth.repository";
+import { hashPassword, verifyPassword } from "../../../../utils/crypto.utils";
 import {
   generateAuthTokens,
   verifyToken,
   JwtPayload,
   generateCustomToken,
-} from "../../../utils/jwt.utils";
-import AppError from "../../../utils/AppError";
-import { createUserAudit } from "../../audit/audit.service";
-import logger from "../../../utils/logger";
-import { AccountStatus } from "../../../../prisma/generated/prisma";
+} from "../../../../utils/jwt.utils";
+import AppError from "../../../../utils/AppError";
+import { createUserAudit } from "../../../audit/audit.service";
+import logger from "../../../../utils/logger";
+import { AccountStatus } from "../../../../../prisma/generated/prisma";
 import { randomUUID } from "crypto";
 import {
   sendEmail,
   getPasswordResetEmailTemplate,
-} from "../../../utils/email.utils";
+} from "../../../../utils/email.utils";
 
 /**
  * Authenticate a user and generate tokens
@@ -274,60 +274,68 @@ export const requestPasswordReset = async (
  * Confirm password reset with token and set new password
  */
 export const confirmPasswordReset = async (
-  confirmData: PasswordResetConfirmDto,
+  data: PasswordResetConfirmDto,
   ipAddress?: string
-): Promise<void> => {
-  const { token, newPassword } = confirmData;
+): Promise<string> => {
+  // Ensure return type is string (userId)
+  try {
+    // Extract email and token from the provided data
+    const tokenParts = data.token.split("|");
+    if (tokenParts.length !== 2) {
+      throw new AppError("Invalid reset token", 400);
+    }
 
-  // Extract email and token from the provided data
-  const tokenParts = token.split("|");
-  if (tokenParts.length !== 2) {
-    throw new AppError("Invalid reset token", 400);
+    const email = decodeURIComponent(tokenParts[0]);
+    const resetToken = decodeURIComponent(tokenParts[1]);
+
+    // Validate token
+    const user = await authRepo.validatePasswordResetToken(email, resetToken);
+    if (!user) {
+      throw new AppError("Invalid or expired reset token", 400);
+    }
+
+    // Hash new password
+    const passwordHash = await hashPassword(data.newPassword);
+
+    // Update user's password using repository
+    await authRepo.updateUserPassword(user.id, passwordHash);
+
+    // Clear reset token
+    await authRepo.clearPasswordResetToken(user.id);
+
+    // Revoke all sessions for security
+    await authRepo.revokeAllUserSessions(user.id);
+
+    // Create audit log entry
+    await createUserAudit({
+      userId: user.id,
+      operation: "PASSWORD_RESET_COMPLETE",
+      ipAddress,
+    });
+
+    // Send confirmation email that password was reset
+    const userName = user.firstName || user.email.split("@")[0];
+    await sendEmail(
+      user.email,
+      "Your Password Has Been Reset - Restaurant Hub",
+      `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Password Reset Successful</h2>
+        <p>Hello ${userName},</p>
+        <p>Your password has been successfully reset. You can now log in with your new password.</p>
+        <p>If you did not request this change, please contact our support team immediately as your account may be compromised.</p>
+        <p>Thank you,<br>The Restaurant Hub Team</p>
+      </div>
+      `
+    );
+
+    // After successfully resetting the password, return the userId
+    const userId = user.id;
+    return userId;
+  } catch (error) {
+    logger.error("Service error in confirmPasswordReset:", error);
+    throw error;
   }
-
-  const email = decodeURIComponent(tokenParts[0]);
-  const resetToken = decodeURIComponent(tokenParts[1]);
-
-  // Validate token
-  const user = await authRepo.validatePasswordResetToken(email, resetToken);
-  if (!user) {
-    throw new AppError("Invalid or expired reset token", 400);
-  }
-
-  // Hash new password
-  const passwordHash = await hashPassword(newPassword);
-
-  // Update user's password using repository
-  await authRepo.updateUserPassword(user.id, passwordHash);
-
-  // Clear reset token
-  await authRepo.clearPasswordResetToken(user.id);
-
-  // Revoke all sessions for security
-  await authRepo.revokeAllUserSessions(user.id);
-
-  // Create audit log entry
-  await createUserAudit({
-    userId: user.id,
-    operation: "PASSWORD_RESET_COMPLETE",
-    ipAddress,
-  });
-
-  // Send confirmation email that password was reset
-  const userName = user.firstName || user.email.split("@")[0];
-  await sendEmail(
-    user.email,
-    "Your Password Has Been Reset - Restaurant Hub",
-    `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2>Password Reset Successful</h2>
-      <p>Hello ${userName},</p>
-      <p>Your password has been successfully reset. You can now log in with your new password.</p>
-      <p>If you did not request this change, please contact our support team immediately as your account may be compromised.</p>
-      <p>Thank you,<br>The Restaurant Hub Team</p>
-    </div>
-    `
-  );
 };
 
 /**

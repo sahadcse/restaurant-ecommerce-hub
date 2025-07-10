@@ -1,12 +1,15 @@
 import { Router } from "express";
-import * as userController from "./user.controller";
+import * as userController from "../controllers/user.controller";
 import {
   authenticate,
   authorizeRoles,
-} from "../../../middleware/auth.middleware";
-import { validateRequest } from "../../../middleware/validation.middleware";
-import { userRegistrationSchema, emailSchema } from "../types/user.validation";
-import { UserRole } from "../../../../prisma/generated/prisma";
+} from "../../../../middleware/auth.middleware";
+import { validateRequest } from "../../../../middleware/validation.middleware";
+import {
+  userRegistrationSchema,
+  emailSchema,
+} from "../../types/user.validation";
+import { UserRole } from "../../../../../prisma/generated/prisma";
 
 const router = Router();
 
@@ -20,21 +23,17 @@ router.post(
 );
 
 /**
- * Restaurant-specific registration endpoints
- * Role-specific registration endpoints
- * These endpoints are for restaurant owners and staff
- * This section handles the registration of restaurant personnel
- */
-
-/**
- * Additional information about restaurant registration
- * This section can include validation rules and requirements
+ * Restaurant owner registration endpoint
  */
 router.post(
   "/register/restaurant-owner",
   validateRequest(userRegistrationSchema),
   userController.registerRestaurantOwner
 );
+
+/**
+ * Restaurant staff registration endpoint
+ */
 router.post(
   "/register/restaurant-staff",
   validateRequest(userRegistrationSchema),
@@ -42,10 +41,8 @@ router.post(
 );
 
 /**
- * Additional information about restaurant registration
- * This section can include validation rules and requirements
+ * Admin registration - protected route for SUPER_ADMIN only
  */
-// Admin registration - protected route for SUPER_ADMIN only
 router.post(
   "/register/admin",
   authenticate,
@@ -57,7 +54,6 @@ router.post(
 /**
  * Initial setup endpoint (create first SUPER_ADMIN)
  * This endpoint can only be called once when no SUPER_ADMIN exists in the system
- * It's protected by a setup key defined in environment variables
  */
 router.post(
   "/setup/super-admin",
@@ -94,3 +90,4 @@ router.post(
 );
 
 export default router;
+

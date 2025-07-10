@@ -20,12 +20,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.8.2
- * Query Engine version: 2060c79ba17c6bb9f5823312b6f6b7f4a845738e
+ * Prisma Client JS version: 6.11.1
+ * Query Engine version: f40f79ec31188888a2e33acda0ecc8fd10a853a9
  */
 Prisma.prismaVersion = {
-  client: "6.8.2",
-  engine: "2060c79ba17c6bb9f5823312b6f6b7f4a845738e"
+  client: "6.11.1",
+  engine: "f40f79ec31188888a2e33acda0ecc8fd10a853a9"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -663,6 +663,40 @@ exports.Prisma.TaxRateScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.EmailQueueScalarFieldEnum = {
+  id: 'id',
+  to: 'to',
+  subject: 'subject',
+  html: 'html',
+  text: 'text',
+  priority: 'priority',
+  template: 'template',
+  templateData: 'templateData',
+  status: 'status',
+  scheduledFor: 'scheduledFor',
+  processedAt: 'processedAt',
+  completedAt: 'completedAt',
+  failedAt: 'failedAt',
+  retryCount: 'retryCount',
+  maxRetries: 'maxRetries',
+  lastError: 'lastError',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.OAuthTokenScalarFieldEnum = {
+  id: 'id',
+  provider: 'provider',
+  service: 'service',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  expiresAt: 'expiresAt',
+  tokenType: 'tokenType',
+  scope: 'scope',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.InventoryScalarFieldEnum = {
   id: 'id',
   menuItemId: 'menuItemId',
@@ -971,6 +1005,7 @@ exports.DeliveryStatus = exports.$Enums.DeliveryStatus = {
   ASSIGNED: 'ASSIGNED',
   IN_TRANSIT: 'IN_TRANSIT',
   DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
   FAILED: 'FAILED'
 };
 
@@ -978,6 +1013,14 @@ exports.OrderCancellationStatus = exports.$Enums.OrderCancellationStatus = {
   REQUESTED: 'REQUESTED',
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED'
+};
+
+exports.EmailStatus = exports.$Enums.EmailStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
 };
 
 exports.LoyaltyTransactionType = exports.$Enums.LoyaltyTransactionType = {
@@ -1014,6 +1057,7 @@ exports.UserRole = exports.$Enums.UserRole = {
   CUSTOMER: 'CUSTOMER',
   RESTAURANT_OWNER: 'RESTAURANT_OWNER',
   RESTAURANT_STAFF: 'RESTAURANT_STAFF',
+  DRIVER: 'DRIVER',
   ADMIN: 'ADMIN',
   SUPER_ADMIN: 'SUPER_ADMIN'
 };
@@ -1029,8 +1073,10 @@ exports.SupportTicketStatus = exports.$Enums.SupportTicketStatus = {
 
 exports.AccountStatus = exports.$Enums.AccountStatus = {
   ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
   SUSPENDED: 'SUSPENDED',
-  PENDING_VERIFICATION: 'PENDING_VERIFICATION'
+  PENDING_VERIFICATION: 'PENDING_VERIFICATION',
+  DELETED: 'DELETED'
 };
 
 exports.Prisma.ModelName = {
@@ -1079,6 +1125,8 @@ exports.Prisma.ModelName = {
   Allergen: 'Allergen',
   MenuItemAllergen: 'MenuItemAllergen',
   TaxRate: 'TaxRate',
+  EmailQueue: 'EmailQueue',
+  OAuthToken: 'OAuthToken',
   Inventory: 'Inventory',
   Supplier: 'Supplier',
   LoyaltyProgram: 'LoyaltyProgram',

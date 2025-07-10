@@ -1,5 +1,8 @@
 import * as restaurantRepository from "../repositories/restaurant.repository";
+import * as inventoryService from "../../inventory/services/inventory.service";
 import logger from "../../../utils/logger";
+// Add notification integration
+import { notificationIntegration } from "../../notification/services/integration.service";
 
 // Helper to generate a unique restaurantPageUrl slug
 const generateUniqueSlug = async (name: string) => {
@@ -69,7 +72,23 @@ export const createRestaurant = async (data: any) => {
       data.restaurantPageUrl = await generateUniqueSlug(data.name);
     }
 
-    return await restaurantRepository.createRestaurant(data);
+    const restaurant = await restaurantRepository.createRestaurant(data);
+
+    // Send restaurant creation notification to owner
+    try {
+      await notificationIntegration.restaurant.approved(
+        data.ownerId,
+        restaurant.name,
+        undefined // Use undefined instead of restaurant.tenantId since Restaurant model doesn't have tenantId
+      );
+    } catch (notificationError) {
+      logger.warn(
+        "Failed to send restaurant creation notification:",
+        notificationError
+      );
+    }
+
+    return restaurant;
   } catch (error) {
     logger.error("Service error in createRestaurant:", error);
     throw error;
@@ -106,7 +125,37 @@ export const updateRestaurant = async (id: string, data: any) => {
       // You could optionally delete the old image from Cloudinary here
     }
 
-    return await restaurantRepository.updateRestaurant(id, data);
+    const updatedRestaurant = await restaurantRepository.updateRestaurant(
+      id,
+      data
+    );
+
+    // Send notification for significant changes
+    if (data.isActive !== undefined) {
+      try {
+        const restaurant = await restaurantRepository.findRestaurantById(id);
+        if (restaurant) {
+          const status = data.isActive ? "activated" : "deactivated";
+          await notificationIntegration.system.securityAlert(
+            restaurant.ownerId,
+            "restaurant_status_change",
+            {
+              restaurantName: restaurant.name,
+              status: status,
+              updatedAt: new Date().toISOString(),
+            },
+            undefined // Use undefined instead of restaurant.tenantId
+          );
+        }
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send restaurant status change notification:",
+          notificationError
+        );
+      }
+    }
+
+    return updatedRestaurant;
   } catch (error) {
     logger.error(`Service error in updateRestaurant for id ${id}:`, error);
     throw error;
@@ -247,7 +296,7 @@ export const createMenuItem = async (data: any) => {
     }
 
     // Extract menuId if provided to handle menu assignment after creation
-    const { menuId, ...menuItemData } = data;
+    const { menuId, initialStock, ...menuItemData } = data;
 
     // Set tenantId as the restaurantId if not provided
     if (!menuItemData.tenantId) {
@@ -256,6 +305,55 @@ export const createMenuItem = async (data: any) => {
 
     // Handle creation of related entities if provided
     const menuItem = await restaurantRepository.createMenuItem(menuItemData);
+
+    // Send notification for new menu item (if it's featured)
+    if (data.isFeatured) {
+      try {
+        const restaurant = await restaurantRepository.findRestaurantById(
+          menuItem.restaurantId
+        );
+        if (restaurant) {
+          await notificationIntegration.promotional.sendBulkPromotion(
+            [restaurant.ownerId], // Could be expanded to customers who favorited the restaurant
+            "New Featured Item Added",
+            `Check out our new featured item: ${menuItem.title}`,
+            {
+              menuItemId: menuItem.id,
+              restaurantId: restaurant.id,
+              itemName: menuItem.title,
+            },
+            undefined // Use undefined for tenantId
+          );
+        }
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send new menu item notification:",
+          notificationError
+        );
+      }
+    }
+
+    // Create initial inventory record if provided
+    if (initialStock && typeof initialStock === "object") {
+      try {
+        await inventoryService.createInventory({
+          menuItemId: menuItem.id,
+          restaurantId: menuItem.restaurantId,
+          quantity: initialStock.quantity || 0,
+          reorderThreshold: initialStock.reorderThreshold || 10,
+          supplierId: initialStock.supplierId,
+          location: initialStock.location,
+        });
+
+        logger.info(`Initial inventory created for menu item ${menuItem.id}`);
+      } catch (inventoryError) {
+        logger.warn(
+          `Failed to create initial inventory for menu item ${menuItem.id}:`,
+          inventoryError
+        );
+        // Don't fail the menu item creation if inventory creation fails
+      }
+    }
 
     // Handle menu item variants
     if (data.variants && Array.isArray(data.variants)) {
@@ -347,6 +445,35 @@ export const updateMenuItem = async (id: string, data: any) => {
     // Update the menu item
     const menuItem = await restaurantRepository.updateMenuItem(id, data);
 
+    // Send notification for stock status changes
+    if (data.stockStatus && data.stockStatus === "IN_STOCK") {
+      try {
+        // This would typically involve getting users who have this item in wishlist
+        // For now, we'll send to restaurant owner
+        const restaurant = await restaurantRepository.findRestaurantById(
+          menuItem.restaurantId
+        );
+        if (restaurant) {
+          await notificationIntegration.promotional.sendBulkPromotion(
+            [restaurant.ownerId],
+            "Item Back in Stock",
+            `${menuItem.title} is now back in stock!`,
+            {
+              menuItemId: menuItem.id,
+              restaurantId: restaurant.id,
+              itemName: menuItem.title,
+            },
+            undefined // Use undefined for tenantId
+          );
+        }
+      } catch (notificationError) {
+        logger.warn(
+          "Failed to send back in stock notification:",
+          notificationError
+        );
+      }
+    }
+
     // Handle variants update if provided
     if (data.variants && Array.isArray(data.variants)) {
       // Update existing variants or create new ones
@@ -401,6 +528,22 @@ export const updateMenuItem = async (id: string, data: any) => {
 
 export const deleteMenuItem = async (id: string) => {
   try {
+    // Check if there's any inventory for this menu item
+    try {
+      const inventory = await inventoryService.getInventoryByMenuItem(id);
+      if (inventory) {
+        // Delete inventory record first
+        await inventoryService.deleteInventory(inventory.id);
+        logger.info(`Inventory deleted for menu item ${id}`);
+      }
+    } catch (inventoryError) {
+      logger.warn(
+        `Could not delete inventory for menu item ${id}:`,
+        inventoryError
+      );
+      // Continue with menu item deletion even if inventory deletion fails
+    }
+
     // Soft delete - set isActive to false, set deletedAt timestamp
     return await restaurantRepository.updateMenuItem(id, {
       isActive: false,
@@ -455,7 +598,7 @@ export const createCategory = async (data: any) => {
       throw new Error(`Category with slug '${data.slug}' already exists`);
     }
 
-    console.log("test -2")
+    console.log("test -2");
 
     // If parentId is provided, check if parent category exists
     if (data.parentId) {
@@ -467,7 +610,7 @@ export const createCategory = async (data: any) => {
       }
     }
 
-    console.log("test -3")
+    console.log("test -3");
 
     console.log("Creating category with data:", data);
 

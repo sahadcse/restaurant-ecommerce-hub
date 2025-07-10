@@ -2,6 +2,9 @@ import dotenv from "dotenv";
 import app from "./app"; // Import the configured app instance
 import prisma from "./db"; // Import the Prisma client
 import logger from "./utils/logger"; // Import the logger
+import { EmailQueueService } from "./services/email-queue.service";
+import { EmailMonitoringService } from "./services/email-monitoring.service";
+import { OAuthTokenService } from "./services/oauth-token.service";
 
 dotenv.config();
 const port: number = Number(process.env.PORT) || 3001;
@@ -26,6 +29,26 @@ const startServer = async () => {
     process.exit(1); // Exit the process if DB connection fails
   }
 };
+
+// Start email services
+EmailQueueService.startQueueProcessor();
+EmailMonitoringService.startMonitoring();
+OAuthTokenService.scheduleTokenRefresh();
+
+// Graceful shutdown
+process.on("SIGINT", () => {
+  console.log("Shutting down gracefully...");
+  EmailQueueService.stopQueueProcessor();
+  EmailMonitoringService.stopMonitoring();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  console.log("Shutting down gracefully...");
+  EmailQueueService.stopQueueProcessor();
+  EmailMonitoringService.stopMonitoring();
+  process.exit(0);
+});
 
 // Process-level error handling
 process.on("uncaughtException", (error) => {

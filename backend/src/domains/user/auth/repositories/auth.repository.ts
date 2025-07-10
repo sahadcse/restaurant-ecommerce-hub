@@ -1,12 +1,12 @@
-import prisma from "../../../db";
+import prisma from "../../../../db";
 import {
   Session,
   User,
   UserRole,
   AccountStatus,
-} from "../../../../prisma/generated/prisma";
-import { generateRandomToken } from "../../../utils/crypto.utils";
-import logger from "../../../utils/logger";
+} from "../../../../../prisma/generated/prisma";
+import { generateRandomToken } from "../../../../utils/crypto.utils";
+import logger from "../../../../utils/logger";
 
 /**
  * Find a user by email (for authentication)

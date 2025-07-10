@@ -40,13 +40,15 @@ enum OrderType {
   @@map("order_type")
 }
 
+
 /// Status of the delivery process for an order.
 enum DeliveryStatus {
-  PENDING    // Delivery not yet assigned or started.
-  ASSIGNED   // Delivery assigned to a driver.
-  IN_TRANSIT // Driver has picked up the order and is en route.
-  DELIVERED  // Delivery successfully completed.
-  FAILED     // Delivery attempt failed.
+  PENDING     // Delivery not yet assigned or started.
+  ASSIGNED    // Delivery assigned to a driver.
+  IN_TRANSIT  // Driver has picked up the order and is en route.
+  DELIVERED   // Delivery successfully completed.
+  CANCELLED   // Delivery was cancelled.
+  FAILED      // Delivery failed for some reason.
 
   @@map("delivery_status")
 }
@@ -90,21 +92,23 @@ enum PriorityLevel {
 
 /// Role assigned to a user within the system.
 enum UserRole {
-  CUSTOMER
-  RESTAURANT_OWNER
-  RESTAURANT_STAFF
-  ADMIN
-  SUPER_ADMIN
+  CUSTOMER          // Regular customer who places orders
+  RESTAURANT_OWNER  // Owner of one or more restaurants
+  RESTAURANT_STAFF  // Staff member working at a restaurant
+  DRIVER           // Delivery driver
+  ADMIN            // System administrator
+  SUPER_ADMIN      // Super administrator with full access
 
   @@map("user_role")
 }
 
 /// Status of a user's account.
 enum AccountStatus {
-  ACTIVE               // Account is active and usable.
-  SUSPENDED            // Account access temporarily revoked.
+  ACTIVE    // Account is active and can be used
+  INACTIVE  // Account is temporarily disabled
+  SUSPENDED // Account is suspended due to violations
   PENDING_VERIFICATION // Account created, awaiting verification (e.g., email).
-  // DEACTIVATED // Consider adding if users can deactivate accounts.
+  DELETED   // Account has been deleted
 
   @@map("account_status")
 }

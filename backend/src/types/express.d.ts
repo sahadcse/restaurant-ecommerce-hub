@@ -1,22 +1,30 @@
-import { UserRole } from "../../prisma/generated/prisma";
-import { Session } from "../../prisma/generated/prisma";
+import { UserRole, Session } from "../../prisma/generated/prisma";
 
-// Use module augmentation to extend Express types
+// Define a simplified user type for auth middleware
+export interface AuthUser {
+  id: string;
+  role: UserRole;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 declare global {
   namespace Express {
-    // Extend Request interface
     interface Request {
-      // The authenticated user information
-      user?: {
-        id: string;
-        role: string;
-      };
+      // The authenticated user information (simplified)
+      user?: AuthUser;
 
-      // The current session information
-      session?: any;
+      // The current session
+      session?: Session;
+
+      // The validated query parameters
+      validatedQuery?: any;
+
+      // The validated route parameters
+      validatedParams?: any;
     }
   }
 }
 
-// This export is required for the declarations to be recognized as a module
 export {};

@@ -372,6 +372,37 @@ export const createMenuItemSchema = z.object({
   dietaryLabel: z.string().nullable().optional(),
 
   quantityLabel: z.string().nullable().optional(),
+
+  /**
+   * Initial inventory setup for the menu item
+   * Optional object containing initial stock information
+   */
+  initialStock: z
+    .object({
+      quantity: z
+        .number()
+        .int()
+        .min(0, { message: "Initial quantity cannot be negative" })
+        .default(0),
+
+      reorderThreshold: z
+        .number()
+        .int()
+        .min(0, { message: "Reorder threshold cannot be negative" })
+        .default(10),
+
+      supplierId: z
+        .string()
+        .uuid({ message: "Supplier ID must be a valid UUID" })
+        .optional(),
+
+      location: z
+        .string()
+        .min(1, { message: "Location cannot be empty" })
+        .max(100, { message: "Location cannot exceed 100 characters" })
+        .optional(),
+    })
+    .optional(),
 });
 
 // Add price comparison validation using superRefine
