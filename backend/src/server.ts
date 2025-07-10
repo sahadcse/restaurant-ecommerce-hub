@@ -7,7 +7,7 @@ import { EmailMonitoringService } from "./services/email-monitoring.service";
 import { OAuthTokenService } from "./services/oauth-token.service";
 
 dotenv.config();
-const port: number = Number(process.env.PORT) || 3001;
+const port: number = Number(process.env.PORT) || 8080;
 
 // Function to start the server after checking DB connection
 const startServer = async () => {
