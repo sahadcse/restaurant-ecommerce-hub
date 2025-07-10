@@ -19,14 +19,14 @@ declare global {
       };
       session?: {
         id: string;
-        userId: string;
+        createdAt: Date;
         token: string;
+        expiresAt: Date;
+        userId: string;
         refreshToken: string | null;
         ipAddress: string | null;
         deviceInfo: JsonValue;
-        expiresAt: Date;
         revokedAt: Date | null;
-        createdAt: Date;
       };
     }
   }
